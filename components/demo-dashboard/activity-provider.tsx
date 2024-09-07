@@ -28,7 +28,7 @@ export const useActivityData = (): ActivityContextProps => {
 
 export const ActivityProvider: React.FC<ActivityProviderProps> = ({ children }) => {
   const firestore = useFirestore();
-  const { data: user } = useUser();
+  const { status, data: user } = useUser();
   const [activities, setActivities] = useState<Activity[]>([]);
   const [loading, setLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false) // Modal state
@@ -42,7 +42,7 @@ export const ActivityProvider: React.FC<ActivityProviderProps> = ({ children }) 
         setActivities(activityData);
         setLoading(false);
         setIsModalOpen(false);
-      } else {
+      } else if (status !== 'loading' && !user) {
         // User isn't logged in, so show the modal
         setIsModalOpen(true);
       }
