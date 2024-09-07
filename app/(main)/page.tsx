@@ -10,6 +10,8 @@ import { ResetIcon } from '@radix-ui/react-icons'
 import { collection, addDoc, query, getDocs } from 'firebase/firestore';
 import { useFirestore, useUser } from 'reactfire';
 
+import { SignupModal } from '@/components/signup-modal'
+
 export default function Component() {
   const [time, setTime] = useState(25 * 60)
   const [isActive, setIsActive] = useState(false)
@@ -23,6 +25,7 @@ export default function Component() {
   const hasAlerted = useRef(false)
   const audioRef = useRef<HTMLAudioElement | null>(null)
   const inputRef = useRef<HTMLInputElement>(null)
+  const [isModalOpen, setIsModalOpen] = useState(false) // Modal state
 
   const firestore = useFirestore()
   const { data: user } = useUser()
@@ -143,6 +146,16 @@ export default function Component() {
     }
   };
 
+  const handleCategoryInputClick = () => {
+    if (!user) {
+      // User is not logged in, show modal
+      setIsModalOpen(true);
+    } else {
+      // Focus on the input and allow interaction
+      inputRef.current?.focus();
+    }
+  };
+
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-100 p-4">
       <Card className="w-full max-w-3xl mx-auto">
@@ -154,7 +167,7 @@ export default function Component() {
             <div className="text-9xl font-bold tabular-nums">{formatTime(time)}</div>
             <div className="text-3xl font-semibold">{timerType}</div>
             <div className="flex flex-wrap justify-center gap-4">
-              <Button onClick={() => startTimer(25, 'Work')} className="bg-red-600 hover:bg-red-700 text-white text-xl py-6 px-8">
+              <Button onClick={() => startTimer(0.1, 'Work')} className="bg-red-600 hover:bg-red-700 text-white text-xl py-6 px-8">
                 Tomato
               </Button>
               <Button onClick={() => startTimer(10, 'Short Break')} className="text-xl py-6 px-8">
@@ -168,54 +181,53 @@ export default function Component() {
                 Reset
               </Button>
             </div>
-            {user && (
-              <div className="w-full max-w-md relative">
-                <Label htmlFor="task-category" className="block text-xl font-medium text-gray-700 mb-2">
-                  Task Category
-                </Label>
-                <div className="relative flex items-center">
-                  <Input
-                    type="text"
-                    id="task-category"
-                    ref={inputRef}
-                    value={taskCategory}
-                    onChange={(e) => handleTaskCategoryChange(e.target.value)}
-                    onKeyDown={handleKeyDown}
-                    onFocus={() => setIsCommandOpen(true)}
-                    onBlur={() => setIsCommandOpen(false)} // Add onBlur to hide the Command
-                    className="text-xl py-3 pl-4 pr-20 w-full" // Added padding-right to leave space for the suggestion
-                    placeholder="Enter task category"
-                  />
-                  {/* {suggestion && (
-                    <span className="absolute right-4 text-gray-400">
-                      {suggestion.slice(taskCategory.length)}
-                    </span>
-                  )} */}
-                </div>
-                {isCommandOpen && (
-                  <Command className="absolute z-10 w-full mt-1">
-                    <CommandList>
-                      {filteredCategories.length > 0 ? (
-                        filteredCategories.map((category, index) => (
-                          <CommandItem
-                            key={index}
-                            onSelect={() => handleCategorySelect(category)}
-                          >
-                            {category}
-                          </CommandItem>
-                        ))
-                      ) : (
-                        <CommandEmpty>No existing categories found</CommandEmpty>
-                      )}
-                    </CommandList>
-                  </Command>
-                )}
+            <div className="w-full max-w-md relative">
+              <Label htmlFor="task-category" className="block text-xl font-medium text-gray-700 mb-2">
+                Task Category
+              </Label>
+              <div className="relative flex items-center">
+                <Input
+                  type="text"
+                  id="task-category"
+                  ref={inputRef}
+                  value={taskCategory}
+                  onClick={handleCategoryInputClick}
+                  onChange={(e) => handleTaskCategoryChange(e.target.value)}
+                  onKeyDown={handleKeyDown}
+                  onFocus={() => setIsCommandOpen(true)}
+                  onBlur={() => setIsCommandOpen(false)} // Add onBlur to hide the Command
+                  className="text-xl py-3 pl-4 pr-20 w-full" // Added padding-right to leave space for the suggestion
+                  placeholder="Enter task category"
+                />
+                {/* {suggestion && (
+                  <span className="absolute right-4 text-gray-400">
+                    {suggestion.slice(taskCategory.length)}
+                  </span>
+                )} */}
               </div>
-
-            )}
+              {isCommandOpen && (
+                <Command className="absolute z-10 w-full mt-1">
+                  <CommandList>
+                    {filteredCategories.length > 0 ? (
+                      filteredCategories.map((category, index) => (
+                        <CommandItem
+                          key={index}
+                          onSelect={() => handleCategorySelect(category)}
+                        >
+                          {category}
+                        </CommandItem>
+                      ))
+                    ) : (
+                      <CommandEmpty>No existing categories found</CommandEmpty>
+                    )}
+                  </CommandList>
+                </Command>
+              )}
+            </div>
           </div>
         </CardContent>
       </Card>
+      <SignupModal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} />
     </div>
   )
 }
