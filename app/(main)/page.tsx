@@ -169,7 +169,7 @@ export default function Component() {
             <div className="text-9xl font-bold tabular-nums">{formatTime(time)}</div>
             <div className="text-3xl font-semibold">{currentActivity}</div>
             <div className="flex flex-wrap justify-center gap-4">
-              <Button onClick={() => startTimer(25, 'Work')} className="bg-red-600 hover:bg-red-700 text-white text-xl py-6 px-8">
+              <Button onClick={() => startTimer(25, currentActivity)} className="bg-red-600 hover:bg-red-700 text-white text-xl py-6 px-8">
                 Lock in!
               </Button>
               <Button onClick={() => startTimer(10, 'Short Break')} className="text-xl py-6 px-8">
