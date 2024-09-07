@@ -78,7 +78,7 @@ export const SignUpForm: FC<SignUpFormProps> = ({ onShowLogin, onSignUp }) => {
                     <Input type="email" {...field} />
                   </FormControl>
                   <FormDescription>
-                    A valid email is required to watch locked specials.
+                    A valid email is required.
                   </FormDescription>
                   <FormMessage />
                 </FormItem>
