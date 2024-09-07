@@ -5,6 +5,7 @@ import { cn } from "@/lib/utils";
 import { MyFirebaseProvider } from "@/components/firebase-providers";
 import { Toaster } from "@/components/ui/toaster";
 import { ReactNode } from "react";
+import { ThemeProvider } from "@/components/theme-provider";
 
 const font = Work_Sans({ subsets: ["latin"] });
 
@@ -18,10 +19,17 @@ export default function RootLayout({ children }: { children: ReactNode }) {
   return (
     <html lang="en">
       <body className={cn(font.className)}>
-        <MyFirebaseProvider>
-          {children}
-          <Toaster />
-        </MyFirebaseProvider>
+        <ThemeProvider
+          attribute="class"
+          defaultTheme="system"
+          enableSystem
+          disableTransitionOnChange
+        >
+          <MyFirebaseProvider>
+            {children}
+            <Toaster />
+          </MyFirebaseProvider>
+        </ThemeProvider>
       </body>
     </html>
   );

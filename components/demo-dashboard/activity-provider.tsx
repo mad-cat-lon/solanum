@@ -1,7 +1,7 @@
 import React, { createContext, useContext, useEffect, useState, ReactNode } from 'react';
 import { collection, getDocs, query, Firestore, Timestamp} from 'firebase/firestore';
 import { useFirestore, useUser } from 'reactfire';
-
+import { SignupModal } from '@/components/signup-modal';
 interface Activity {
   type: string;
   timestamp: Timestamp;
@@ -31,6 +31,7 @@ export const ActivityProvider: React.FC<ActivityProviderProps> = ({ children }) 
   const { data: user } = useUser();
   const [activities, setActivities] = useState<Activity[]>([]);
   const [loading, setLoading] = useState(true);
+  const [isModalOpen, setIsModalOpen] = useState(false) // Modal state
 
   useEffect(() => {
     const fetchActivities = async () => {
@@ -40,6 +41,9 @@ export const ActivityProvider: React.FC<ActivityProviderProps> = ({ children }) 
         const activityData = querySnapshot.docs.map((doc) => doc.data() as Activity);
         setActivities(activityData);
         setLoading(false);
+      } else {
+        // User isn't logged in, so show the modal
+        setIsModalOpen(true);
       }
     };
 
@@ -49,6 +53,7 @@ export const ActivityProvider: React.FC<ActivityProviderProps> = ({ children }) 
   return (
     <ActivityContext.Provider value={{ activities, loading }}>
       {children}
+      <SignupModal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} />
     </ActivityContext.Provider>
   );
 };

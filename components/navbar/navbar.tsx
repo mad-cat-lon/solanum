@@ -14,7 +14,7 @@ export const NavBar: FC = () => {
             <Link href="/" className="hover:opacity-80 transition-opacity">
               <div className="flex items-center">
                 <LocateFixed className="w-8 h-8 mr-2 inline" />{" "}
-                <span className="text-xl font-semibold tracking-tighter text-slate-800 mr-6">
+                <span className="text-xl font-semibold tracking-tighter mr-6">
                   lock in
                 </span>
               </div>

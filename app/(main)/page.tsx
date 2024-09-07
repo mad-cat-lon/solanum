@@ -160,7 +160,7 @@ export default function Component() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-100 p-4">
+    <div className="min-h-screen flex items-center justify-center p-4">
       <Card className="w-full max-w-3xl mx-auto">
         <CardHeader>
           {/* <CardTitle className="text-4xl font-bold text-center">Tomato Timer</CardTitle> */}
@@ -185,7 +185,7 @@ export default function Component() {
               </Button>
             </div>
             <div className="w-full max-w-md relative">
-              <Label htmlFor="task-category" className="block text-xl font-medium text-gray-700 mb-2">
+              <Label htmlFor="task-category" className="block text-xl font-medium mb-2">
                 Task Category
               </Label>
               <div className="relative flex items-center">
