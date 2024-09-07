@@ -9,7 +9,8 @@ import {
 } from "firebase/auth";
 import { GithubIcon } from "lucide-react";
 import { FC, useState } from "react";
-import { useAuth } from "reactfire";
+import { useAuth, useFirestore } from "reactfire";
+import { doc, setDoc, getDoc, serverTimestamp } from "firebase/firestore";
 
 interface Props {
   onSignIn?: () => void;
@@ -17,13 +18,33 @@ interface Props {
 
 export const ProviderLoginButtons: FC<Props> = ({ onSignIn }) => {
   const auth = useAuth();
+  const firestore = useFirestore();
   const [isLoading, setIsLoading] = useState(false);
 
+  const createUserInFirestore = async (user: any) => {
+    const userDocRef = doc(firestore, `users/${user.uid}`);
+    const userDoc = await getDoc(userDocRef);
+
+    // Check if the user already exists in Firestore
+    if (!userDoc.exists()) {
+      // Create the user document with the sign-in data
+      await setDoc(userDocRef, {
+        uid: user.uid,
+        email: user.email,
+        displayName: user.displayName,
+        photoURL: user.photoURL,
+        providerId: user.providerData[0].providerId,
+        createdAt: serverTimestamp(), // Store the timestamp when the user was created
+      });
+    }
+  };
+  
   const doProviderSignIn = async (provider: GoogleAuthProvider) => {
     try {
       setIsLoading(true);
-      await signInWithPopup(auth, provider);
-      // create user in your database here
+      const result = await signInWithPopup(auth, provider);
+      const { user } = result;
+      await createUserInFirestore(user);
       toast({ title: "Signed in!" });
       onSignIn?.();
     } catch (err: any) {
@@ -40,11 +61,8 @@ export const ProviderLoginButtons: FC<Props> = ({ onSignIn }) => {
         disabled={isLoading}
         onClick={async () => {
           const provider = new GoogleAuthProvider();
-          toast({
-            title: "Oops!",
-            description: "Provider not configured, yet.",
-          });
-          // await doProviderSignIn(provider);
+
+          await doProviderSignIn(provider);
         }}
       >
         <svg
@@ -63,11 +81,7 @@ export const ProviderLoginButtons: FC<Props> = ({ onSignIn }) => {
         disabled={isLoading}
         onClick={async () => {
           const provider = new GithubAuthProvider();
-          toast({
-            title: "Oops!",
-            description: "Provider not configured, yet.",
-          });
-          // await doProviderSignIn(provider);
+          await doProviderSignIn(provider);
         }}
       >
         <GithubIcon className="w-4 h-4 mr-2" />
