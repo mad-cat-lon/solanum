@@ -70,6 +70,10 @@ export default function Component() {
     }
   }, [isActive, time, timerType])
 
+  useEffect(() => {
+    document.title = `${formatTime(time)} remaining - ${timerType}`
+  })
+
   const startTimer = (duration: number, type: string) => {
     setTime(duration * 60)
     setTimerType(type === 'Work' && taskCategory ? taskCategory : type)
