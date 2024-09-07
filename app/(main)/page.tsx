@@ -15,8 +15,7 @@ import { SignupModal } from '@/components/signup-modal'
 export default function Component() {
   const [time, setTime] = useState(25 * 60)
   const [isActive, setIsActive] = useState(false)
-  const [timerType, setTimerType] = useState('Work')
-  const [taskCategory, setTaskCategory] = useState('')
+  const [currentActivity, setCurrentActivity] = useState('Work')
   const [categories, setCategories] = useState<string[]>([])
   const [filteredCategories, setFilteredCategories] = useState<string[]>([])
   const [isCommandOpen, setIsCommandOpen] = useState(false)
@@ -53,15 +52,15 @@ export default function Component() {
       timerRef.current = setInterval(() => {
         setTime((prevTime) => prevTime - 1)
       }, 1000)
-      document.title = `${formatTime(time)} remaining - ${timerType}`
+      document.title = `${formatTime(time)} remaining - ${currentActivity}`
     } else if (time === 0 && !hasAlerted.current) {
       setIsActive(false)
       if (audioRef.current) {
         audioRef.current.play()
       }
-      alert(`${timerType} session completed!`)
+      alert(`${currentActivity} session completed!`)
       hasAlerted.current = true
-      handleAddNewActivity(timerType)
+      handleAddNewActivity(currentActivity)
       document.title = `Lock in!`
     }
 
@@ -70,12 +69,12 @@ export default function Component() {
         clearInterval(timerRef.current)
       }
     }
-  }, [isActive, time, timerType])
+  }, [isActive, time, currentActivity])
 
 
-  const startTimer = (duration: number, type: string) => {
+  const startTimer = (duration: number, activity: string) => {
     setTime(duration * 60)
-    setTimerType(type === 'Work' && taskCategory ? taskCategory : type)
+    setCurrentActivity(activity)
     handleAddNewCategory()
     setIsActive(true)
     hasAlerted.current = false
@@ -87,7 +86,7 @@ export default function Component() {
     }
     setIsActive(false)
     setTime(25 * 60)
-    setTimerType('Work')
+    setCurrentActivity('Work')
     hasAlerted.current = false
   }
 
@@ -98,7 +97,7 @@ export default function Component() {
   }
 
   const handleTaskCategoryChange = (newCategory: string) => {
-    setTaskCategory(newCategory);
+    setCurrentActivity(newCategory);
     if (newCategory === '') {
       setFilteredCategories(categories);
       setSuggestion('');
@@ -113,16 +112,16 @@ export default function Component() {
   };
 
   const handleCategorySelect = (category: string) => {
-    setTaskCategory(category);
+    setCurrentActivity(category);
     setIsCommandOpen(false);
     setSuggestion('');
   };
 
   const handleAddNewCategory = async () => {
-    if (user && taskCategory && taskCategory !== '' && !categories.includes(taskCategory)) {
+    if (user && currentActivity !== 'Work' && !categories.includes(currentActivity)) {
       const newCategoryRef = collection(firestore, `users/${user.uid}/taskCategories`);
-      await addDoc(newCategoryRef, { name: taskCategory });
-      const updatedCategories = [...categories, taskCategory];
+      await addDoc(newCategoryRef, { name: currentActivity });
+      const updatedCategories = [...categories, currentActivity];
       setCategories(updatedCategories);
       setFilteredCategories(updatedCategories);
     }
@@ -144,7 +143,7 @@ export default function Component() {
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Tab' && suggestion) {
       e.preventDefault();
-      setTaskCategory(suggestion);
+      setCurrentActivity(suggestion);
       setSuggestion('');
     }
   };
@@ -168,7 +167,7 @@ export default function Component() {
         <CardContent>
           <div className="flex flex-col items-center space-y-8">
             <div className="text-9xl font-bold tabular-nums">{formatTime(time)}</div>
-            <div className="text-3xl font-semibold">{timerType}</div>
+            <div className="text-3xl font-semibold">{currentActivity}</div>
             <div className="flex flex-wrap justify-center gap-4">
               <Button onClick={() => startTimer(25, 'Work')} className="bg-red-600 hover:bg-red-700 text-white text-xl py-6 px-8">
                 Lock in!
@@ -193,20 +192,29 @@ export default function Component() {
                   type="text"
                   id="task-category"
                   ref={inputRef}
-                  value={taskCategory}
+                  value={currentActivity}
                   onClick={handleCategoryInputClick}
                   onChange={(e) => handleTaskCategoryChange(e.target.value)}
                   onKeyDown={handleKeyDown}
                   onFocus={() => setIsCommandOpen(true)}
                   onBlur={() => setIsCommandOpen(false)} // Add onBlur to hide the Command
-                  className="text-xl py-3 pl-4 pr-20 w-full" // Added padding-right to leave space for the suggestion
+                  className="text-xl py-3 pl-4 pr-20 w-full bg-transparent caret-black" 
                   placeholder="Enter task category"
+                  style={{ caretColor: 'black' }} // Ensures the caret remains visible
                 />
-                {/* {suggestion && (
-                  <span className="absolute right-4 text-gray-400">
-                    {suggestion.slice(taskCategory.length)}
+                {suggestion && suggestion !== currentActivity && (
+                  <span 
+                    className="absolute top-1/2 left-4 transform -translate-y-1/2 pointer-events-none text-gray-400"
+                    style={{ 
+                      paddingLeft: `${currentActivity.length}ch`, // Dynamically move the suggestion to the right
+                      fontSize: 'inherit', // Match input text size
+                      lineHeight: 'inherit', // Match input line height
+                      fontWeight: 'inherit', // Match input font weight
+                    }} 
+                  >
+                    {suggestion.slice(currentActivity.length)}
                   </span>
-                )} */}
+                )}
               </div>
               {isCommandOpen && (
                 <Command className="absolute z-10 w-full mt-1">
@@ -215,7 +223,7 @@ export default function Component() {
                       filteredCategories.map((category, index) => (
                         <CommandItem
                           key={index}
-                          onSelect={() => handleCategorySelect(category)}
+                          onMouseDown={() => handleCategorySelect(category)}
                         >
                           {category}
                         </CommandItem>
