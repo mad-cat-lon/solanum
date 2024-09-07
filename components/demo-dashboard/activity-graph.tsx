@@ -33,24 +33,12 @@ export const ActivityGraph: React.FC = () => {
 
 
   // State for date filtering
-  const [selectedRange, setSelectedRange] = useState<'7d' | 'week' | '30d' | '120d' | 'year' | 'custom'>('7d');
+  const [selectedRange, setSelectedRange] = useState<'today' | '7d' | 'week' | '30d' | '120d' | 'year' | 'custom'>('7d');
   const [customDateRange, setCustomDateRange] = useState<{ start: Date | undefined; end: Date | undefined }>({
     start: undefined,
     end: undefined,
   });
   const { activities, loading } = useActivityData();
-  // useEffect(() => {
-  //   if (user) {
-  //     const fetchActivities = async () => {
-  //       const q = query(collection(firestore as Firestore, `users/${user.uid}/activity`));
-  //       const querySnapshot = await getDocs(q);
-  //       const activityData = querySnapshot.docs.map(doc => doc.data() as Activity);
-  //       setActivities(activityData);
-  //     };
-
-  //     fetchActivities();
-  //   }
-  // }, [firestore, user]);
   
   useEffect(() => {
     if (!loading && activities.length > 0) {
@@ -62,16 +50,16 @@ export const ActivityGraph: React.FC = () => {
         }
         return false;
       });
-
+  
       const processActivityData = (activities: Activity[]): ChartData[] => {
-        const taskData: Record<string, Record<string, number | string>> = {}; // Store task counts by date and type
+        const taskData: Record<string, Record<string, number | string>> = {}; // Store task counts by date/hour and type
         const taskTypesSet = new Set<string>();
         let globalMaxValue = 0; // Track global max value
   
         // Step 1: Get the min and max dates in the activity list
-        let minDate: Date | null = null;
-        let maxDate: Date | null = null;
-  
+        let minDate: Date = new Date();
+        let maxDate: Date = new Date();
+
         filteredActivities.forEach(activity => {
           const { timestamp, type } = activity;
           const date = timestamp.toDate();
@@ -88,25 +76,32 @@ export const ActivityGraph: React.FC = () => {
           return [];
         }
   
-        // Step 3: Generate all dates between minDate and maxDate
+        // Step 3: Generate all dates between minDate and maxDate (group by day or hour)
         const dateRange: string[] = [];
         let currentDate = new Date(minDate); // Ensure currentDate is a Date object
   
-        // Type assertion to make sure TypeScript knows that maxDate is a Date
-        const maxDateChecked = maxDate as Date;
+        const isToday = selectedRange === 'today';
   
-        // Use a loop to check the date values
-        while (currentDate <= maxDateChecked) {
-          const formattedDate = format(currentDate, 'yyyy-MM-dd');
+        // Use a loop to check the date/hour values
+        while (currentDate <= maxDate) {
+          const formattedDate = isToday
+            ? format(currentDate, 'HH') // Group by hour if it's today
+            : format(currentDate, 'yyyy-MM-dd'); // Otherwise group by day
           dateRange.push(formattedDate);
-          currentDate.setDate(currentDate.getDate() + 1); // Move to the next date
+          if (isToday) {
+            currentDate.setHours(currentDate.getHours() + 1); // Move to the next hour
+          } else {
+            currentDate.setDate(currentDate.getDate() + 1); // Move to the next date
+          }
         }
   
         // Step 4: Process the activities into a chartable structure
         filteredActivities.forEach(activity => {
           const { timestamp, type } = activity;
           const date = timestamp.toDate();
-          const formattedDate = format(date, 'yyyy-MM-dd'); // Format date
+          const formattedDate = isToday
+            ? format(date, 'HH') // Format by hour for today's range
+            : format(date, 'yyyy-MM-dd'); // Format by day otherwise
   
           if (!taskData[formattedDate]) {
             taskData[formattedDate] = { date: formattedDate };
@@ -117,11 +112,11 @@ export const ActivityGraph: React.FC = () => {
           globalMaxValue = Math.max(globalMaxValue, taskData[formattedDate][type] as number);
         });
   
-        // Step 5: Ensure every date has an entry for all task types, autofill missing tasks with zero
+        // Step 5: Ensure every date/hour has an entry for all task types, autofill missing tasks with zero
         const completeData: ChartData[] = dateRange.map(date => {
-          const dayData: ChartData = { date }; // Initialize each day's data
+          const dayData: ChartData = { date }; // Initialize each day's or hour's data
   
-          // For each task type, ensure it exists for the current date, defaulting to zero
+          // For each task type, ensure it exists for the current date/hour, defaulting to zero
           taskTypesSet.forEach(type => {
             dayData[type] = (taskData[date]?.[type] || 0) as number; // Use '0' for missing types
           });
@@ -141,6 +136,7 @@ export const ActivityGraph: React.FC = () => {
       setChartData(processActivityData(filteredActivities));
     }
   }, [activities, selectedRange, customDateRange]);
+  
 
   const generateRandomHexColor = () => {
     // Generate red, green, and blue components between 0 and 255
@@ -183,6 +179,13 @@ export const ActivityGraph: React.FC = () => {
         return { start: subDays(now, 120), end: now };
       case 'year':
         return { start: subYears(now, 1), end: now };
+      case 'today': {
+        const start = new Date(now);
+        start.setHours(0, 0, 0, 0); // Start of the day
+        const end = new Date(now);
+        end.setHours(23, 59, 59, 999); // End of the day
+        return { start, end };
+      }
       case 'custom':
         return customDateRange;
       default:
@@ -193,21 +196,22 @@ export const ActivityGraph: React.FC = () => {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Task Activity by Category</CardTitle>
+        <CardTitle>Completed tasks</CardTitle>
         <CardDescription>
-          Activity counts per date, categorized by task type
+          Task counts per date, categorized by task type
         </CardDescription>
       </CardHeader>
       <CardContent>
 
         <div className="flex space-x-4 mb-4">
           {/* Select for predefined ranges */}
-          <Select value={selectedRange} onValueChange={(value) => setSelectedRange(value as'7d' | 'week' | '30d' | '120d' | 'year' | 'custom')}>
+          <Select value={selectedRange} onValueChange={(value) => setSelectedRange(value as 'today' | '7d' | 'week' | '30d' | '120d' | 'year' | 'custom')}>
             <SelectTrigger>
               <SelectValue placeholder="Select Date Range" />
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="7d">Last 7 Days</SelectItem>
+              <SelectItem value="today">Today</SelectItem>
               <SelectItem value="week">This Week</SelectItem>
               <SelectItem value="30d">Last 30 Days</SelectItem>
               <SelectItem value="120d">Last 120 Days</SelectItem>
@@ -264,7 +268,7 @@ export const ActivityGraph: React.FC = () => {
             </AreaChart>
           </ResponsiveContainer>
         ) : (
-          <p>No activity data available.</p>
+          <p>No task data available.</p>
         )}
       </CardContent>
     </Card>
