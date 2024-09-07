@@ -41,6 +41,7 @@ export const ActivityProvider: React.FC<ActivityProviderProps> = ({ children }) 
         const activityData = querySnapshot.docs.map((doc) => doc.data() as Activity);
         setActivities(activityData);
         setLoading(false);
+        setIsModalOpen(false);
       } else {
         // User isn't logged in, so show the modal
         setIsModalOpen(true);
