@@ -12,7 +12,7 @@ export const NavbarUserLinks: FC = () => {
   const { data, hasEmitted } = useUser();
 
   return (
-    <>
+    <div className="flex flex-col items-center space-y-4 sm:flex-row sm:space-y-0 sm:space-x-4">
       <Link href="/stats" className={buttonVariants()}>
         Stats
       </Link>
@@ -28,6 +28,6 @@ export const NavbarUserLinks: FC = () => {
           </Link>
         </>
       )}
-    </>
+    </div>
   );
 };
