@@ -1,19 +1,13 @@
+"use client";
 import { FC } from "react";
 import Image from "next/image";
-import { MainNav } from "@/components/demo-dashboard/main-nav";
-import { RecentSales } from "@/components/demo-dashboard/recent-sales";
 import { ActivityGraph } from "@/components/demo-dashboard/activity-graph"
-import {
-  Card,
-  CardHeader,
-  CardTitle,
-  CardContent,
-  CardDescription,
-} from "@/components/ui/card";
+import { ActivityChart } from "@/components/demo-dashboard/activity-chart"
+import { ActivityProvider } from "@/components/demo-dashboard/activity-provider";
 
 export const Statistics: FC = () => {
   return (
-    <>
+    <ActivityProvider>
       <div className="md:hidden">
         <Image
           src="/examples/dashboard-light.png"
@@ -39,7 +33,10 @@ export const Statistics: FC = () => {
         <div className="flex-1 space-y-4 pt-6">
           <ActivityGraph/>
         </div>
+        <div className="flex-1 space-y-4 pt-6">
+          <ActivityChart/>
+        </div>
       </div>
-    </>
+    </ActivityProvider>
   );
 };

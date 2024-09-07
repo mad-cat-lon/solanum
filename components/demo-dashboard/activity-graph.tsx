@@ -8,6 +8,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '@/components/ui/select';
 import { format, startOfWeek, subDays, subMonths, subYears } from 'date-fns';
 import { DatePicker } from '@/components/ui/date-picker'; 
+import { useActivityData } from '@/components/demo-dashboard/activity-provider';
 
 // Define the shape of an activity document
 interface Activity {
@@ -24,7 +25,7 @@ interface ChartData {
 export const ActivityGraph: React.FC = () => {
   const firestore = useFirestore();
   const { data: user } = useUser();
-  const [activities, setActivities] = useState<Activity[]>([]);
+  // const [activities, setActivities] = useState<Activity[]>([]);
   const [chartData, setChartData] = useState<ChartData[]>([]);
   const [taskTypes, setTaskTypes] = useState<string[]>([]); // To store unique task types dynamically
   const [maxValue, setMaxValue] = useState<number>(0); // To store max value
@@ -33,23 +34,26 @@ export const ActivityGraph: React.FC = () => {
 
   // State for date filtering
   const [selectedRange, setSelectedRange] = useState<'7d' | 'week' | '30d' | '120d' | 'year' | 'custom'>('7d');
-  const [customDateRange, setCustomDateRange] = useState<{ start: Date | null; end: Date | null }>({ start: null, end: null });
+  const [customDateRange, setCustomDateRange] = useState<{ start: Date | undefined; end: Date | undefined }>({
+    start: undefined,
+    end: undefined,
+  });
+  const { activities, loading } = useActivityData();
+  // useEffect(() => {
+  //   if (user) {
+  //     const fetchActivities = async () => {
+  //       const q = query(collection(firestore as Firestore, `users/${user.uid}/activity`));
+  //       const querySnapshot = await getDocs(q);
+  //       const activityData = querySnapshot.docs.map(doc => doc.data() as Activity);
+  //       setActivities(activityData);
+  //     };
 
-  useEffect(() => {
-    if (user) {
-      const fetchActivities = async () => {
-        const q = query(collection(firestore as Firestore, `users/${user.uid}/activity`));
-        const querySnapshot = await getDocs(q);
-        const activityData = querySnapshot.docs.map(doc => doc.data() as Activity);
-        setActivities(activityData);
-      };
-
-      fetchActivities();
-    }
-  }, [firestore, user]);
+  //     fetchActivities();
+  //   }
+  // }, [firestore, user]);
   
   useEffect(() => {
-    if (activities.length > 0) {
+    if (!loading && activities.length > 0) {
       const { start, end } = getDateRange();
       const filteredActivities = activities.filter(activity => {
         const activityDate = activity.timestamp.toDate();
@@ -198,7 +202,7 @@ export const ActivityGraph: React.FC = () => {
 
         <div className="flex space-x-4 mb-4">
           {/* Select for predefined ranges */}
-          <Select value={selectedRange} onValueChange={(value) => setSelectedRange(value as '7d' | 'week' | '30d' | '120d' | 'year' | 'custom')}>
+          <Select value={selectedRange} onValueChange={(value) => setSelectedRange(value as'7d' | 'week' | '30d' | '120d' | 'year' | 'custom')}>
             <SelectTrigger>
               <SelectValue placeholder="Select Date Range" />
             </SelectTrigger>
@@ -217,8 +221,13 @@ export const ActivityGraph: React.FC = () => {
             <div className="flex space-x-2">
                 <DatePicker
                 label="Start Date"
+                selectedDate={customDateRange.start}
+                onSelect={(date) => setCustomDateRange((prev) => ({...prev, start: date}))}
                 />
-                <DatePicker label="End Date"
+                <DatePicker
+                label="End Date"
+                selectedDate={customDateRange.end}
+                onSelect={(date) => setCustomDateRange((prev) => ({...prev, end: date}))}
                 />
             </div>
           )}

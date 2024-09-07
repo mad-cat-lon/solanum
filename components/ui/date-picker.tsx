@@ -21,9 +21,14 @@ interface DatePickerProps {
 
 
 
-function DatePicker({ label }: DatePickerProps ) {
+function DatePicker({ label, selectedDate, onSelect }: DatePickerProps ) {
   const [date, setDate] = React.useState<Date>()
- 
+
+  const handleDateSelect = (selected: Date | undefined) => {
+    setDate(selected);
+    if (onSelect) onSelect(selected); // Call parent callback
+  };
+
   return (
     <Popover>
       <PopoverTrigger asChild>
@@ -42,7 +47,7 @@ function DatePicker({ label }: DatePickerProps ) {
         <Calendar
           mode="single"
           selected={date}
-          onSelect={setDate}
+          onSelect={handleDateSelect}
           initialFocus
         />
       </PopoverContent>
