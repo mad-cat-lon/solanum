@@ -160,7 +160,7 @@ export default function Component() {
     <div className="min-h-screen flex items-center justify-center bg-gray-100 p-4">
       <Card className="w-full max-w-3xl mx-auto">
         <CardHeader>
-          <CardTitle className="text-4xl font-bold text-center">Tomato Timer</CardTitle>
+          {/* <CardTitle className="text-4xl font-bold text-center">Tomato Timer</CardTitle> */}
         </CardHeader>
         <CardContent>
           <div className="flex flex-col items-center space-y-8">
@@ -168,7 +168,7 @@ export default function Component() {
             <div className="text-3xl font-semibold">{timerType}</div>
             <div className="flex flex-wrap justify-center gap-4">
               <Button onClick={() => startTimer(25, 'Work')} className="bg-red-600 hover:bg-red-700 text-white text-xl py-6 px-8">
-                Tomato
+                Lock in!
               </Button>
               <Button onClick={() => startTimer(10, 'Short Break')} className="text-xl py-6 px-8">
                 Short Break
