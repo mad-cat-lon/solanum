@@ -3,9 +3,11 @@
 import { useEffect, useState } from 'react';
 import { collection, query, getDocs, Firestore, Timestamp } from 'firebase/firestore';
 import { useFirestore, useUser } from 'reactfire';
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, AreaChart, Area } from 'recharts';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { format } from 'date-fns'; // Optional: For formatting dates
+import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '@/components/ui/select';
+import { format, startOfWeek, subDays, subMonths, subYears } from 'date-fns';
+import { DatePicker } from '@/components/ui/date-picker'; 
 
 // Define the shape of an activity document
 interface Activity {
@@ -26,6 +28,12 @@ export const ActivityGraph: React.FC = () => {
   const [chartData, setChartData] = useState<ChartData[]>([]);
   const [taskTypes, setTaskTypes] = useState<string[]>([]); // To store unique task types dynamically
   const [maxValue, setMaxValue] = useState<number>(0); // To store max value
+  const [colorMap, setColorMap] = useState<Record<string, string>>({}); // Color map for task types
+
+
+  // State for date filtering
+  const [selectedRange, setSelectedRange] = useState<'7d' | 'week' | '30d' | '120d' | 'year' | 'custom'>('7d');
+  const [customDateRange, setCustomDateRange] = useState<{ start: Date | null; end: Date | null }>({ start: null, end: null });
 
   useEffect(() => {
     if (user) {
@@ -39,9 +47,18 @@ export const ActivityGraph: React.FC = () => {
       fetchActivities();
     }
   }, [firestore, user]);
-
+  
   useEffect(() => {
     if (activities.length > 0) {
+      const { start, end } = getDateRange();
+      const filteredActivities = activities.filter(activity => {
+        const activityDate = activity.timestamp.toDate();
+        if (start && end) {
+          return activityDate >= start && activityDate <= end;
+        }
+        return false;
+      });
+
       const processActivityData = (activities: Activity[]): ChartData[] => {
         const taskData: Record<string, Record<string, number | string>> = {}; // Store task counts by date and type
         const taskTypesSet = new Set<string>();
@@ -51,14 +68,14 @@ export const ActivityGraph: React.FC = () => {
         let minDate: Date | null = null;
         let maxDate: Date | null = null;
   
-        activities.forEach(activity => {
+        filteredActivities.forEach(activity => {
           const { timestamp, type } = activity;
           const date = timestamp.toDate();
   
           if (!minDate || date < minDate) minDate = date;
           if (!maxDate || date > maxDate) maxDate = date;
   
-          taskTypesSet.add(type); // Collect task types
+          taskTypesSet.add(type);
         });
   
         // Step 2: Ensure minDate and maxDate are not null before proceeding
@@ -82,7 +99,7 @@ export const ActivityGraph: React.FC = () => {
         }
   
         // Step 4: Process the activities into a chartable structure
-        activities.forEach(activity => {
+        filteredActivities.forEach(activity => {
           const { timestamp, type } = activity;
           const date = timestamp.toDate();
           const formattedDate = format(date, 'yyyy-MM-dd'); // Format date
@@ -117,40 +134,106 @@ export const ActivityGraph: React.FC = () => {
         return completeData;
       };
   
-      setChartData(processActivityData(activities));
+      setChartData(processActivityData(filteredActivities));
     }
-  }, [activities]);
-  
+  }, [activities, selectedRange, customDateRange]);
 
-    const generateRedHexString = () => {
-    // Generate red component between 128 and 255
-    const red = Math.floor(Math.random() * (255 - 128 + 1)) + 128;
-    
-    // Generate green and blue components between 0 and 64 for a shade of red
-    const green = Math.floor(Math.random() * 65);
-    const blue = Math.floor(Math.random() * 65);
-    
+  const generateRandomHexColor = () => {
+    // Generate red, green, and blue components between 0 and 255
+    const red = Math.floor(Math.random() * 256);
+    const green = Math.floor(Math.random() * 256);
+    const blue = Math.floor(Math.random() * 256);
+  
     // Convert to hexadecimal and pad with zeroes if needed
     const redHex = red.toString(16).padStart(2, '0');
     const greenHex = green.toString(16).padStart(2, '0');
     const blueHex = blue.toString(16).padStart(2, '0');
-    
+  
     // Concatenate into a full hex color string
     return `#${redHex}${greenHex}${blueHex}`;
-  }
+  };
+
+  // Get or assign a color for a task type
+  const getColorForTaskType = (taskType: string) => {
+    if (!colorMap[taskType]) {
+      setColorMap(prev => ({
+        ...prev,
+        [taskType]: generateRandomHexColor()
+      }));
+    }
+    return colorMap[taskType];
+  };
+
+
+  // Function to get date range based on selected filter
+  const getDateRange = () => {
+    const now = new Date();
+    switch (selectedRange) {
+      case '7d':
+        return { start: subDays(now, 7), end: now };
+      case 'week':
+        return { start: startOfWeek(now), end: now };
+      case '30d':
+        return { start: subDays(now, 30), end: now };
+      case '120d':
+        return { start: subDays(now, 120), end: now };
+      case 'year':
+        return { start: subYears(now, 1), end: now };
+      case 'custom':
+        return customDateRange;
+      default:
+        return { start: null, end: null };
+    }
+  };
 
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Line Chart - Task Activity by Category</CardTitle>
+        <CardTitle>Task Activity by Category</CardTitle>
         <CardDescription>
           Activity counts per date, categorized by task type
         </CardDescription>
       </CardHeader>
       <CardContent>
+
+        <div className="flex space-x-4 mb-4">
+          {/* Select for predefined ranges */}
+          <Select value={selectedRange} onValueChange={(value) => setSelectedRange(value as '7d' | 'week' | '30d' | '120d' | 'year' | 'custom')}>
+            <SelectTrigger>
+              <SelectValue placeholder="Select Date Range" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="7d">Last 7 Days</SelectItem>
+              <SelectItem value="week">This Week</SelectItem>
+              <SelectItem value="30d">Last 30 Days</SelectItem>
+              <SelectItem value="120d">Last 120 Days</SelectItem>
+              <SelectItem value="year">Last Year</SelectItem>
+              <SelectItem value="custom">Custom Range</SelectItem>
+            </SelectContent>
+          </Select>
+
+          {/* DatePicker for custom range */}
+          {selectedRange === 'custom' && (
+            <div className="flex space-x-2">
+                <DatePicker
+                label="Start Date"
+                />
+                <DatePicker label="End Date"
+                />
+            </div>
+          )}
+        </div>
         {chartData.length > 0 ? (
           <ResponsiveContainer width="100%" height={400}>
-            <LineChart data={chartData}>
+            <AreaChart data={chartData}>
+              <defs>
+                {taskTypes.map((taskType, index) => (
+                  <linearGradient key={taskType} id={`color${index}`} x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor={getColorForTaskType(taskType)} stopOpacity={0.8} />
+                    <stop offset="95%" stopColor={getColorForTaskType(taskType)} stopOpacity={0} />
+                  </linearGradient>
+                ))}
+              </defs>
               <CartesianGrid strokeDasharray="3 3" />
               <XAxis dataKey="date" />
               {/* Customize the Y-axis to make the highest point 2/3 of the way up */}
@@ -159,25 +242,17 @@ export const ActivityGraph: React.FC = () => {
               />
               <Tooltip />
               <Legend />
-              <defs>
-                <linearGradient id="colorCount" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor="#8884d8" stopOpacity={0.8} />
-                  <stop offset="95%" stopColor="#8884d8" stopOpacity={0.1} />
-                </linearGradient>
-              </defs>
-
-              {/* Dynamically create a line for each task category */}
               {taskTypes.map((taskType, index) => (
-                <Line
+                <Area
                   key={taskType}
                   type="monotone"
                   dataKey={taskType}
-                  stroke={`${generateRedHexString()}`} // Generate random color for each task type
+                  stroke={getColorForTaskType(taskType)} 
                   fillOpacity={1}
-                  fill="url(#colorCount)"
+                  fill={`url(#color${index})`}
                 />
               ))}
-            </LineChart>
+            </AreaChart>
           </ResponsiveContainer>
         ) : (
           <p>No activity data available.</p>
