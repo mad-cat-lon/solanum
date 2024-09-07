@@ -249,9 +249,10 @@ export const ActivityGraph: React.FC = () => {
               </defs>
               <CartesianGrid strokeDasharray="3 3" />
               <XAxis dataKey="date" />
-              {/* Customize the Y-axis to make the highest point 2/3 of the way up */}
               <YAxis
-                domain={[0, maxValue * 1.5]} // Extend the domain so the maxValue is only 2/3 of the Y-axis
+                domain={[0, maxValue * 1.5]}
+                tickFormatter={(tick: number) => `${Math.round(tick)}`} 
+                allowDecimals={false}
               />
               <Tooltip />
               <Legend />
