@@ -53,6 +53,7 @@ export default function Component() {
       timerRef.current = setInterval(() => {
         setTime((prevTime) => prevTime - 1)
       }, 1000)
+      document.title = `${formatTime(time)} remaining - ${timerType}`
     } else if (time === 0 && !hasAlerted.current) {
       setIsActive(false)
       if (audioRef.current) {
@@ -61,6 +62,7 @@ export default function Component() {
       alert(`${timerType} session completed!`)
       hasAlerted.current = true
       handleAddNewActivity(timerType)
+      document.title = `Lock in!`
     }
 
     return () => {
@@ -70,9 +72,6 @@ export default function Component() {
     }
   }, [isActive, time, timerType])
 
-  useEffect(() => {
-    document.title = `${formatTime(time)} remaining - ${timerType}`
-  })
 
   const startTimer = (duration: number, type: string) => {
     setTime(duration * 60)
