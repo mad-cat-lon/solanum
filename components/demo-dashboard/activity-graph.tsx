@@ -43,78 +43,84 @@ export const ActivityGraph: React.FC = () => {
   useEffect(() => {
     if (activities.length > 0) {
       const processActivityData = (activities: Activity[]): ChartData[] => {
-        const taskData: Record<string, Record<string, number>> = {};
+        const taskData: Record<string, Record<string, number | string>> = {}; // Store task counts by date and type
         const taskTypesSet = new Set<string>();
         let globalMaxValue = 0; // Track global max value
-      
+  
         // Step 1: Get the min and max dates in the activity list
         let minDate: Date | null = null;
         let maxDate: Date | null = null;
-      
+  
         activities.forEach(activity => {
           const { timestamp, type } = activity;
           const date = timestamp.toDate();
-          
+  
           if (!minDate || date < minDate) minDate = date;
           if (!maxDate || date > maxDate) maxDate = date;
-          
+  
           taskTypesSet.add(type); // Collect task types
         });
-      
+  
+        // Step 2: Ensure minDate and maxDate are not null before proceeding
         if (!minDate || !maxDate) {
           // No valid activities, return early
           return [];
         }
-      
-        // Step 2: Generate all dates between minDate and maxDate
-        const dateRange = [];
-        const currentDate = new Date(minDate);
-        while (currentDate <= maxDate) {
+  
+        // Step 3: Generate all dates between minDate and maxDate
+        const dateRange: string[] = [];
+        let currentDate = new Date(minDate); // Ensure currentDate is a Date object
+  
+        // Type assertion to make sure TypeScript knows that maxDate is a Date
+        const maxDateChecked = maxDate as Date;
+  
+        // Use a loop to check the date values
+        while (currentDate <= maxDateChecked) {
           const formattedDate = format(currentDate, 'yyyy-MM-dd');
           dateRange.push(formattedDate);
           currentDate.setDate(currentDate.getDate() + 1); // Move to the next date
         }
-      
-        // Step 3: Process the activities into a chartable structure
+  
+        // Step 4: Process the activities into a chartable structure
         activities.forEach(activity => {
           const { timestamp, type } = activity;
           const date = timestamp.toDate();
           const formattedDate = format(date, 'yyyy-MM-dd'); // Format date
-      
+  
           if (!taskData[formattedDate]) {
             taskData[formattedDate] = { date: formattedDate };
           }
-      
+  
           // Increment the task count
-          taskData[formattedDate][type] = (taskData[formattedDate][type] || 0) + 1;
-          globalMaxValue = Math.max(globalMaxValue, taskData[formattedDate][type]);
+          taskData[formattedDate][type] = (taskData[formattedDate][type] || 0) as number + 1;
+          globalMaxValue = Math.max(globalMaxValue, taskData[formattedDate][type] as number);
         });
-      
-        // Step 4: Ensure every date has an entry for all task types, autofill missing tasks with zero
+  
+        // Step 5: Ensure every date has an entry for all task types, autofill missing tasks with zero
         const completeData: ChartData[] = dateRange.map(date => {
-          const dayData: ChartData = { date };
-      
+          const dayData: ChartData = { date }; // Initialize each day's data
+  
           // For each task type, ensure it exists for the current date, defaulting to zero
           taskTypesSet.forEach(type => {
-            dayData[type] = taskData[date]?.[type] || 0;
+            dayData[type] = (taskData[date]?.[type] || 0) as number; // Use '0' for missing types
           });
-      
+  
           return dayData;
         });
-      
+  
         // Set unique task types to state to create lines dynamically
         setTaskTypes(Array.from(taskTypesSet));
-      
+  
         // Set the max value to state
         setMaxValue(globalMaxValue);
-      
+  
         return completeData;
       };
-      
-
+  
       setChartData(processActivityData(activities));
     }
   }, [activities]);
+  
 
     const generateRedHexString = () => {
     // Generate red component between 128 and 255
