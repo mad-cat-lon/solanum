@@ -26,6 +26,7 @@
     "class-variance-authority": "^0.7.0",
     "clsx": "^2.0.0",
     "cmdk": "^1.0.0",
+    "date-fns": "^3.6.0",
     "encoding": "^0.1.13",
     "firebase": "^9.23.0",
     "lodash.debounce": "^4.0.8",

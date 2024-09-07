@@ -1,9 +1,9 @@
-import { DemoDashboard } from "@/components/demo-dashboard/demo-dashboard";
+import { Statistics } from "@/components/demo-dashboard/statistics";
 
 const ApplicationPage = () => {
   return (
     <>
-      <DemoDashboard />
+      <Statistics />
     </>
   );
 };
