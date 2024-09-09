@@ -10,9 +10,7 @@ import { ThemeProvider } from "@/components/theme-provider";
 const font = Work_Sans({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: "FOCUS UP LOCK IN",
-  description:
-    "LOCK IN!",
+  title: "Lock in"
 };
 
 export default function RootLayout({ children }: { children: ReactNode }) {

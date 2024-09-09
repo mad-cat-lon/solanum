@@ -9,6 +9,7 @@ import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '@
 import { format, startOfWeek, subDays, subMonths, subYears } from 'date-fns';
 import { DatePicker } from '@/components/ui/date-picker'; 
 import { useActivityData } from '@/components/demo-dashboard/activity-provider';
+import { useTheme } from "next-themes";
 
 // Define the shape of an activity document
 interface Activity {
@@ -23,14 +24,18 @@ interface ChartData {
 }
 
 export const ActivityGraph: React.FC = () => {
-  const firestore = useFirestore();
-  const { data: user } = useUser();
-  // const [activities, setActivities] = useState<Activity[]>([]);
   const [chartData, setChartData] = useState<ChartData[]>([]);
   const [taskTypes, setTaskTypes] = useState<string[]>([]); // To store unique task types dynamically
   const [maxValue, setMaxValue] = useState<number>(0); // To store max value
-  const [colorMap, setColorMap] = useState<Record<string, string>>({}); // Color map for task types
 
+  const { theme } = useTheme(); // Access current theme
+  
+  const tooltipStyles = {
+    backgroundColor: theme === "dark" ? "#000000" : "#FFFFFF", // Dark/light background
+    color: theme === "dark" ? "#FFFFFF" : "#000000", // Dark/light text
+    borderRadius: "8px",
+    padding: "8px",
+  };
 
   // State for date filtering
   const [selectedRange, setSelectedRange] = useState<'today' | '7d' | 'week' | '30d' | '120d' | 'year' | 'custom'>('7d');
@@ -38,7 +43,7 @@ export const ActivityGraph: React.FC = () => {
     start: undefined,
     end: undefined,
   });
-  const { activities, loading } = useActivityData();
+  const { activities, loading, categoryColors } = useActivityData();
   
   useEffect(() => {
     if (!loading && activities.length > 0) {
@@ -155,13 +160,7 @@ export const ActivityGraph: React.FC = () => {
 
   // Get or assign a color for a task type
   const getColorForTaskType = (taskType: string) => {
-    if (!colorMap[taskType]) {
-      setColorMap(prev => ({
-        ...prev,
-        [taskType]: generateRandomHexColor()
-      }));
-    }
-    return colorMap[taskType];
+    return categoryColors[taskType] || generateRandomHexColor();
   };
 
 
@@ -254,7 +253,9 @@ export const ActivityGraph: React.FC = () => {
                 tickFormatter={(tick: number) => `${Math.round(tick)}`} 
                 allowDecimals={false}
               />
-              <Tooltip />
+              <Tooltip
+                contentStyle={tooltipStyles}
+              />
               <Legend />
               {taskTypes.map((taskType, index) => (
                 <Area

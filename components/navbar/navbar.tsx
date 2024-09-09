@@ -15,7 +15,7 @@ export const NavBar: FC = () => {
               <div className="flex items-center">
                 <LocateFixed className="w-8 h-8 mr-2 inline" />{" "}
                 <span className="text-xl font-semibold tracking-tighter mr-6">
-                  lock in
+                  lockdin
                 </span>
               </div>
             </Link>

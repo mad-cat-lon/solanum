@@ -7,10 +7,20 @@ import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Command, CommandInput, CommandList, CommandEmpty, CommandItem } from "@/components/ui/command"
 import { ResetIcon } from '@radix-ui/react-icons'
-import { collection, addDoc, query, getDocs } from 'firebase/firestore';
+import { collection, addDoc, query, getDocs, getDoc, setDoc, doc } from 'firebase/firestore';
 import { useFirestore, useUser } from 'reactfire';
 
 import { SignupModal } from '@/components/signup-modal'
+
+interface Settings {
+  longBreak: number;
+  shortBreak: number;
+  defaultTimeLength: number;
+  activityCategories: {
+    name: string;
+    color: string;
+  }[];
+}
 
 export default function Component() {
   const [time, setTime] = useState(25 * 60)
@@ -25,21 +35,41 @@ export default function Component() {
   const audioRef = useRef<HTMLAudioElement | null>(null)
   const inputRef = useRef<HTMLInputElement>(null)
   const [isModalOpen, setIsModalOpen] = useState(false) // Modal state
+  const [settings, setSettings] = useState<Settings | null>(null) // Track user settings
 
   const firestore = useFirestore()
   const { data: user } = useUser()
 
   useEffect(() => {
     if (user) {
-      const fetchCategories = async () => {
-        const q = query(collection(firestore, `users/${user.uid}/taskCategories`));
-        const querySnapshot = await getDocs(q);
-        const userCategories: string[] = querySnapshot.docs.map(doc => doc.data().name);
-        setCategories(userCategories);
-        setFilteredCategories(userCategories);
+      const fetchSettings = async () => {
+        const userRef = doc(firestore, `users/${user.uid}`);
+        const settingsDoc = await getDoc(userRef);
+
+        if (settingsDoc.exists()) {
+          const fetchedSettings = settingsDoc.data().settings as Settings || {};
+          const defaultSettings: Settings = {
+            longBreak: fetchedSettings.longBreak ?? 15,
+            shortBreak: fetchedSettings.shortBreak ?? 10,
+            defaultTimeLength: fetchedSettings.defaultTimeLength ?? 25,
+            activityCategories: fetchedSettings.activityCategories ?? [{ name: 'Work', color: '#000000' }]
+          };
+          setSettings(defaultSettings);
+          setCategories(defaultSettings.activityCategories.map(category => category.name));
+          setFilteredCategories(defaultSettings.activityCategories.map(category => category.name));
+          setTime(defaultSettings.defaultTimeLength * 60);
+        } else {
+          setSettings({
+            longBreak: 15,
+            shortBreak: 5,
+            defaultTimeLength: 25,
+            activityCategories: [{ name: 'Work', color: '#000000' }]
+          });
+          setTime(25 * 60);
+        }
       };
 
-      fetchCategories();
+      fetchSettings();
     }
   }, [firestore, user]);
 
@@ -85,7 +115,7 @@ export default function Component() {
       clearInterval(timerRef.current)
     }
     setIsActive(false)
-    setTime(25 * 60)
+    setTime((settings?.defaultTimeLength?? 25) * 60) 
     setCurrentActivity('Work')
     hasAlerted.current = false
   }
@@ -118,27 +148,38 @@ export default function Component() {
   };
 
   const handleAddNewCategory = async () => {
-    if (user && currentActivity !== 'Work' && !categories.includes(currentActivity)) {
-      const newCategoryRef = collection(firestore, `users/${user.uid}/taskCategories`);
-      await addDoc(newCategoryRef, { name: currentActivity });
-      const updatedCategories = [...categories, currentActivity];
-      setCategories(updatedCategories);
-      setFilteredCategories(updatedCategories);
+    if (user && currentActivity !== 'Work' && !filteredCategories.includes(currentActivity)) {
+      // Add new category to the settings
+      const existingSettings = settings || {
+        longBreak: 15,
+        shortBreak: 10,
+        defaultTimeLength: 25,
+        activityCategories: []
+      }
+      const updatedCategories = [...existingSettings.activityCategories, { name: currentActivity, color: '#ff0000' }];
+      const updatedSettings = { ...existingSettings, activityCategories: updatedCategories };
+      
+      setSettings(updatedSettings);
+      setFilteredCategories(updatedCategories.map(category => category.name));
+
+      // Update Firestore
+      const userRef = doc(firestore, `users/${user.uid}`);
+      await setDoc(userRef, { settings: updatedSettings }, { merge: true });
     }
   };
 
   const handleAddNewActivity = async (timerType: string) => {
     if (user) {
       // Submit the completed activity to Firestore
-      const newActivityRef = collection(firestore, `users/${user.uid}/activity`);
+      const newActivityRef = doc(firestore, `users/${user.uid}/activity`, new Date().toISOString());
       const newActivity = {
         timestamp: new Date(),
         type: timerType
       };
-      console.log(timerType)
-      await addDoc(newActivityRef, newActivity);
+      await setDoc(newActivityRef, newActivity);
     }
   };
+
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Tab' && suggestion) {
@@ -169,13 +210,13 @@ export default function Component() {
             <div className="text-9xl font-bold tabular-nums">{formatTime(time)}</div>
             <div className="text-3xl font-semibold">{currentActivity}</div>
             <div className="flex flex-wrap justify-center gap-4">
-              <Button onClick={() => startTimer(25, currentActivity)} className="bg-red-600 hover:bg-red-700 text-white text-xl py-6 px-8">
+              <Button onClick={() => startTimer(settings?.defaultTimeLength || 25, currentActivity)} className="bg-red-600 hover:bg-red-700 text-white text-xl py-6 px-8">
                 Lock in!
               </Button>
-              <Button onClick={() => startTimer(10, 'Short Break')} className="text-xl py-6 px-8">
+              <Button onClick={() => startTimer(settings?.shortBreak || 10, 'Short Break')} className="text-xl py-6 px-8">
                 Short Break
               </Button>
-              <Button onClick={() => startTimer(15, 'Long Break')} className="text-xl py-6 px-8">
+              <Button onClick={() => startTimer(settings?.longBreak || 15, 'Long Break')} className="text-xl py-6 px-8">
                 Long Break
               </Button>
               <Button onClick={resetTimer} variant="outline" className="text-xl py-6 px-8">

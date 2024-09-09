@@ -27,6 +27,10 @@ export function UserNav() {
     });
     router.replace("/");
   };
+
+  const gotoSettings = async () => {
+    router.replace("/settings");
+  };
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
@@ -57,8 +61,7 @@ export function UserNav() {
         </DropdownMenuLabel>
         <DropdownMenuSeparator />
         <DropdownMenuGroup>
-          <DropdownMenuItem>Profile</DropdownMenuItem>
-          <DropdownMenuItem>Settings</DropdownMenuItem>
+          <DropdownMenuItem onClick={gotoSettings}>Settings</DropdownMenuItem>
         </DropdownMenuGroup>
         <DropdownMenuSeparator />
         <DropdownMenuItem onClick={doLogout}>Log out</DropdownMenuItem>
