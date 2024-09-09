@@ -28,7 +28,7 @@ export const ActivityGraph: React.FC = () => {
   const [taskTypes, setTaskTypes] = useState<string[]>([]); // To store unique task types dynamically
   const [maxValue, setMaxValue] = useState<number>(0); // To store max value
   const [selectedCategory, setSelectedCategory] = useState<string>('All'); // For category filter
-  const [totalCount, setTotalCount] = useState<number>(0); // for the total number of time spent
+  const [totalCount, setTotalCount] = useState<number>(0);// for the total number of time spent
 
   const { theme } = useTheme(); // Access current theme
   
@@ -37,7 +37,7 @@ export const ActivityGraph: React.FC = () => {
     color: theme === "dark" ? "#FFFFFF" : "#000000", // Dark/light text
     borderRadius: "8px",
     padding: "8px",
-    
+    border: "none"
   };
 
   // State for date filtering
@@ -64,7 +64,6 @@ export const ActivityGraph: React.FC = () => {
         const taskTypesSet = new Set<string>();
         let globalMaxValue = 0; // Track global max value
   
-        setTotalCount(filteredActivities.length)
         // Step 1: Get the min and max dates in the activity list
         let minDate: Date = new Date();
         let maxDate: Date = new Date();
@@ -143,9 +142,22 @@ export const ActivityGraph: React.FC = () => {
       };
   
       setChartData(processActivityData(filteredActivities));
+
     }
   }, [activities, selectedRange, customDateRange]);
+
+  useEffect(() => {
+    if (chartData.length > 0) {
+      const totalTaskCount = chartData.reduce((total, data) => {
+        if (selectedCategory === 'All') {
+          return total + taskTypes.reduce((sum, type) => sum + (data[type] as number), 0);
+        }
+        return total + (data[selectedCategory] as number || 0);
+      }, 0);
   
+      setTotalCount(totalTaskCount);
+    }
+  }, [chartData, selectedCategory, taskTypes]);
 
   const generateRandomHexColor = () => {
     // Generate red, green, and blue components between 0 and 255
