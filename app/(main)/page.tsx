@@ -117,6 +117,7 @@ export default function Component() {
     setIsActive(false)
     setTime((settings?.defaultTimeLength?? 25) * 60) 
     setCurrentActivity('Work')
+    document.title = `Lock in!`
     hasAlerted.current = false
   }
 
