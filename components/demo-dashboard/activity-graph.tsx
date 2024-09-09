@@ -35,6 +35,7 @@ export const ActivityGraph: React.FC = () => {
     color: theme === "dark" ? "#FFFFFF" : "#000000", // Dark/light text
     borderRadius: "8px",
     padding: "8px",
+    border: "none"
   };
 
   // State for date filtering
