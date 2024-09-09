@@ -25,23 +25,26 @@ interface Activity {
   timestamp: Timestamp;
 }
 
-// Utility function to group activities by date
-const groupActivitiesByDate = (activities: Activity[]) => {
-  const activityMap: Record<string, number> = {};
-  activities.forEach((activity) => {
-    const dateKey = format(activity.timestamp.toDate(), 'yyyy-MM-dd');
-    activityMap[dateKey] = (activityMap[dateKey] || 0) + 1; // Increment activity count per date
-  });
-  return activityMap;
-};
 
 export const ActivityChart: React.FC = () => {
   // const firestore = useFirestore();
   // const { data: user } = useUser();
   const { activities, loading } = useActivityData();
   const [activityMap, setActivityMap] = useState<Record<string, number>>({});
+  const [totalCount, setTotalCount] = useState(0);
   const days = 365;
   const weeksCount = Math.ceil(days / 7);
+
+  // Utility function to group activities by date
+  const groupActivitiesByDate = (activities: Activity[]) => {
+    const activityMap: Record<string, number> = {};
+    activities.forEach((activity) => {
+      const dateKey = format(activity.timestamp.toDate(), 'yyyy-MM-dd');
+      activityMap[dateKey] = (activityMap[dateKey] || 0) + 1; // Increment activity count per date
+      setTotalCount(prevCount => prevCount + 1);
+    });
+    return activityMap;
+  };
 
   useEffect(() => {
     if (!loading && activities.length > 0) {
@@ -53,7 +56,7 @@ export const ActivityChart: React.FC = () => {
   return (
     <Card className="w-full max-w-4xl mx-auto">
       <CardHeader>
-        <CardTitle>Activity Chart</CardTitle>
+        <CardTitle>You locked in {totalCount} times in the past 365 days.</CardTitle>
       </CardHeader>
       <CardContent>
         <TooltipProvider>

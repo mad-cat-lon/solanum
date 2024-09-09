@@ -27,6 +27,8 @@ export const ActivityGraph: React.FC = () => {
   const [chartData, setChartData] = useState<ChartData[]>([]);
   const [taskTypes, setTaskTypes] = useState<string[]>([]); // To store unique task types dynamically
   const [maxValue, setMaxValue] = useState<number>(0); // To store max value
+  const [selectedCategory, setSelectedCategory] = useState<string>('All'); // For category filter
+  const [totalCount, setTotalCount] = useState<number>(0); // for the total number of time spent
 
   const { theme } = useTheme(); // Access current theme
   
@@ -35,7 +37,7 @@ export const ActivityGraph: React.FC = () => {
     color: theme === "dark" ? "#FFFFFF" : "#000000", // Dark/light text
     borderRadius: "8px",
     padding: "8px",
-    border: "none"
+    
   };
 
   // State for date filtering
@@ -62,6 +64,7 @@ export const ActivityGraph: React.FC = () => {
         const taskTypesSet = new Set<string>();
         let globalMaxValue = 0; // Track global max value
   
+        setTotalCount(filteredActivities.length)
         // Step 1: Get the min and max dates in the activity list
         let minDate: Date = new Date();
         let maxDate: Date = new Date();
@@ -193,10 +196,16 @@ export const ActivityGraph: React.FC = () => {
     }
   };
 
+  // Filter chart data based on the selected category
+  const filteredChartData = selectedCategory === 'All' ? chartData : chartData.map(data => ({
+    date: data.date,
+    [selectedCategory]: data[selectedCategory] || 0
+  }));
+
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Completed tasks</CardTitle>
+        <CardTitle>You locked in {totalCount} times.</CardTitle>
         <CardDescription>
           Task counts per date, categorized by task type
         </CardDescription>
@@ -235,17 +244,35 @@ export const ActivityGraph: React.FC = () => {
                 />
             </div>
           )}
+          <Select value={selectedCategory} onValueChange={(value) => setSelectedCategory(value)}>
+          <SelectTrigger>
+            <SelectValue placeholder="Select Category" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="All">All Categories</SelectItem>
+            {taskTypes.map((type) => (
+              <SelectItem key={type} value={type}>{type}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
         </div>
-        {chartData.length > 0 ? (
+        {filteredChartData.length > 0 ? (
           <ResponsiveContainer width="100%" height={400}>
-            <AreaChart data={chartData}>
+            <AreaChart data={filteredChartData}>
               <defs>
-                {taskTypes.map((taskType, index) => (
-                  <linearGradient key={taskType} id={`color${index}`} x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor={getColorForTaskType(taskType)} stopOpacity={0.8} />
-                    <stop offset="95%" stopColor={getColorForTaskType(taskType)} stopOpacity={0} />
+              {selectedCategory === 'All'
+                ? taskTypes.map((taskType, index) => (
+                    <linearGradient key={taskType} id={`color${index}`} x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor={getColorForTaskType(taskType)} stopOpacity={0.8} />
+                      <stop offset="95%" stopColor={getColorForTaskType(taskType)} stopOpacity={0} />
+                    </linearGradient>
+                  ))
+                : 
+                  <linearGradient id={`color0`} x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor={getColorForTaskType(selectedCategory)} stopOpacity={0.8} />
+                    <stop offset="95%" stopColor={getColorForTaskType(selectedCategory)} stopOpacity={0} />
                   </linearGradient>
-                ))}
+              }
               </defs>
               <CartesianGrid strokeDasharray="3 3" />
               <XAxis dataKey="date" />
@@ -258,16 +285,26 @@ export const ActivityGraph: React.FC = () => {
                 contentStyle={tooltipStyles}
               />
               <Legend />
-              {taskTypes.map((taskType, index) => (
+              {selectedCategory === 'All' ? (
+                taskTypes.map((taskType, index) => (
+                  <Area
+                    key={taskType}
+                    type="monotone"
+                    dataKey={taskType}
+                    stroke={getColorForTaskType(taskType)} 
+                    fillOpacity={1}
+                    fill={`url(#color${index})`}
+                  />
+                ))
+              ) : (
                 <Area
-                  key={taskType}
                   type="monotone"
-                  dataKey={taskType}
-                  stroke={getColorForTaskType(taskType)} 
+                  dataKey={selectedCategory}
+                  stroke={getColorForTaskType(selectedCategory)}
                   fillOpacity={1}
-                  fill={`url(#color${index})`}
+                  fill={`url(#color0)`}
                 />
-              ))}
+              )}
             </AreaChart>
           </ResponsiveContainer>
         ) : (
