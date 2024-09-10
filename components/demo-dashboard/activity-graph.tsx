@@ -150,11 +150,16 @@ export const ActivityGraph: React.FC = () => {
     if (chartData.length > 0) {
       const totalTaskCount = chartData.reduce((total, data) => {
         if (selectedCategory === 'All') {
-          return total + taskTypes.reduce((sum, type) => sum + (data[type] as number), 0);
+          // Filter out "Short Break" and "Long Break" and then calculate the total
+          return total + taskTypes
+            .filter((type) => type !== 'Short Break' && type !== 'Long Break')
+            .reduce((sum, type) => sum + (data[type] as number), 0);
         }
-        return total + (data[selectedCategory] as number || 0);
+        // If a specific category is selected, check if it's not "Short Break" or "Long Break"
+        return total + (selectedCategory !== 'Short Break' && selectedCategory !== 'Long Break' 
+          ? (data[selectedCategory] as number || 0) 
+          : 0);
       }, 0);
-  
       setTotalCount(totalTaskCount);
     }
   }, [chartData, selectedCategory, taskTypes]);
