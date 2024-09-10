@@ -172,12 +172,12 @@ export default function Component() {
   const handleAddNewActivity = async (timerType: string) => {
     if (user) {
       // Submit the completed activity to Firestore
-      const newActivityRef = doc(firestore, `users/${user.uid}/activity`, new Date().toISOString());
+      const activityCollectionRef = collection(firestore, `users/${user.uid}/activity`);
       const newActivity = {
         timestamp: new Date(),
         type: timerType
       };
-      await setDoc(newActivityRef, newActivity);
+      await addDoc(activityCollectionRef, newActivity);
     }
   };
 
