@@ -52,9 +52,10 @@ export const ActivityGraph: React.FC = () => {
     if (!loading && activities.length > 0) {
       const { start, end } = getDateRange();
       const filteredActivities = activities.filter(activity => {
-        const activityDate = activity.timestamp.toDate();
+        const activityDate = activity.timestamp.toDate();  
+        const localActivityDate = new Date(activityDate);
         if (start && end) {
-          return activityDate >= start && activityDate <= end;
+          return localActivityDate  >= start && localActivityDate  <= end;
         }
         return false;
       });
@@ -64,7 +65,7 @@ export const ActivityGraph: React.FC = () => {
         const taskTypesSet = new Set<string>();
         let globalMaxValue = 0; // Track global max value
   
-        // Step 1: Get the min and max dates in the activity list
+        // Get the min and max dates in the activity list
         let minDate: Date = new Date();
         let maxDate: Date = new Date();
 
@@ -77,14 +78,26 @@ export const ActivityGraph: React.FC = () => {
   
           taskTypesSet.add(type);
         });
-  
-        // Step 2: Ensure minDate and maxDate are not null before proceeding
+
+        // Ensure minDate and maxDate are not null before proceeding
         if (!minDate || !maxDate) {
           // No valid activities, return early
           return [];
         }
   
-        // Step 3: Generate all dates between minDate and maxDate (group by day or hour)
+
+        // Ensure maxDate covers the full day by setting it to 23:59:59
+        if (maxDate) {
+          maxDate.setHours(23, 59, 59, 999); // End of the day on maxDate
+        }
+
+        // Ensure minDate is set properly if missing
+        if (!minDate) {
+          minDate = new Date();
+          minDate.setHours(0, 0, 0, 0); // Start of today
+        }
+
+        // Generate all dates between minDate and maxDate (group by day or hour)
         const dateRange: string[] = [];
         let currentDate = new Date(minDate); // Ensure currentDate is a Date object
   
@@ -102,8 +115,7 @@ export const ActivityGraph: React.FC = () => {
             currentDate.setDate(currentDate.getDate() + 1); // Move to the next date
           }
         }
-  
-        // Step 4: Process the activities into a chartable structure
+
         filteredActivities.forEach(activity => {
           const { timestamp, type } = activity;
           const date = timestamp.toDate();
@@ -120,7 +132,7 @@ export const ActivityGraph: React.FC = () => {
           globalMaxValue = Math.max(globalMaxValue, taskData[formattedDate][type] as number);
         });
   
-        // Step 5: Ensure every date/hour has an entry for all task types, autofill missing tasks with zero
+        //  autofill missing tasks with zero
         const completeData: ChartData[] = dateRange.map(date => {
           const dayData: ChartData = { date }; // Initialize each day's or hour's data
   
@@ -190,6 +202,8 @@ export const ActivityGraph: React.FC = () => {
     const now = new Date();
     switch (selectedRange) {
       case '7d':
+        const end = new Date(now);
+        end.setHours(23, 59, 59, 999); 
         return { start: subDays(now, 7), end: now };
       case 'week':
         return { start: startOfWeek(now), end: now };
@@ -218,7 +232,7 @@ export const ActivityGraph: React.FC = () => {
     date: data.date,
     [selectedCategory]: data[selectedCategory] || 0
   }));
-
+  console.log('Processed Chart Data:', chartData);
   return (
     <Card>
       <CardHeader>
