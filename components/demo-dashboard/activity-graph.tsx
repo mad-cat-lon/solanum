@@ -232,7 +232,6 @@ export const ActivityGraph: React.FC = () => {
     date: data.date,
     [selectedCategory]: data[selectedCategory] || 0
   }));
-  console.log('Processed Chart Data:', chartData);
   return (
     <Card>
       <CardHeader>
