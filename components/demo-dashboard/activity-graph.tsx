@@ -69,6 +69,9 @@ export const ActivityGraph: React.FC = () => {
         let minDate: Date = new Date();
         let maxDate: Date = new Date();
 
+        minDate.setHours(0, 0, 0, 0); // Start of today
+        maxDate.setHours(23, 59, 59, 999); // End of the day
+        
         filteredActivities.forEach(activity => {
           const { timestamp, type } = activity;
           const date = timestamp.toDate();
