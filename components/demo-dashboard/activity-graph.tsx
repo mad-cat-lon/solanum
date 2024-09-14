@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { collection, query, getDocs, Firestore, Timestamp } from 'firebase/firestore';
 import { useFirestore, useUser } from 'reactfire';
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, AreaChart, Area } from 'recharts';
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, AreaChart, Area, BarChart, Bar } from 'recharts';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '@/components/ui/select';
 import { format, startOfWeek, subDays, subMonths, subYears } from 'date-fns';
@@ -29,6 +29,7 @@ export const ActivityGraph: React.FC = () => {
   const [maxValue, setMaxValue] = useState<number>(0); // To store max value
   const [selectedCategory, setSelectedCategory] = useState<string>('All'); // For category filter
   const [totalCount, setTotalCount] = useState<number>(0);// for the total number of time spent
+  const [viewType, setViewType] = useState<'lineChart' | 'stackedBarChart' | 'cumulative'>('lineChart');
 
   const { theme } = useTheme(); // Access current theme
   
@@ -235,6 +236,113 @@ export const ActivityGraph: React.FC = () => {
     date: data.date,
     [selectedCategory]: data[selectedCategory] || 0
   }));
+
+  // Function to render the chart based on the selected view type
+  const renderChart = () => {
+    switch (viewType) {
+      case 'lineChart':
+        return (
+          <AreaChart data={filteredChartData}>
+            <defs>
+            {selectedCategory === 'All'
+              ? taskTypes.map((taskType, index) => (
+                  <linearGradient key={taskType} id={`color${index}`} x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor={getColorForTaskType(taskType)} stopOpacity={0.8} />
+                    <stop offset="95%" stopColor={getColorForTaskType(taskType)} stopOpacity={0} />
+                  </linearGradient>
+                ))
+              : 
+                <linearGradient id={`color0`} x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="5%" stopColor={getColorForTaskType(selectedCategory)} stopOpacity={0.8} />
+                  <stop offset="95%" stopColor={getColorForTaskType(selectedCategory)} stopOpacity={0} />
+                </linearGradient>
+            }
+            </defs>
+            <CartesianGrid strokeDasharray="3 3" />
+            <XAxis dataKey="date" />
+            <YAxis
+              domain={[0, maxValue * 1.5]}
+              tickFormatter={(tick: number) => `${Math.round(tick)}`} 
+              allowDecimals={false}
+            />
+            <Tooltip
+              contentStyle={tooltipStyles}
+            />
+            <Legend />
+            {selectedCategory === 'All' ? (
+              taskTypes.map((taskType, index) => (
+                <Area
+                  key={taskType}
+                  type="monotone"
+                  dataKey={taskType}
+                  stroke={getColorForTaskType(taskType)} 
+                  fillOpacity={1}
+                  fill={`url(#color${index})`}
+                />
+              ))
+            ) : (
+              <Area
+                type="monotone"
+                dataKey={selectedCategory}
+                stroke={getColorForTaskType(selectedCategory)}
+                fillOpacity={1}
+                fill={`url(#color0)`}
+              />
+            )}
+          </AreaChart>
+        );
+      case 'stackedBarChart':
+        return (
+          <BarChart data={chartData}>
+            <CartesianGrid strokeDasharray="3 3" />
+            <XAxis dataKey="date" />
+            <YAxis 
+              domain={[0, maxValue * 1.5]}
+              tickFormatter={(tick: number) => `${Math.round(tick)}`} 
+              allowDecimals={false}
+            />
+            <Tooltip
+              contentStyle={tooltipStyles}
+            />
+            <Legend />
+            {taskTypes.map((taskType, index) => (
+              <Bar key={taskType} dataKey={taskType} stackId="a" fill={getColorForTaskType(taskType)} />
+            ))}
+          </BarChart>
+        );
+      case 'cumulative':
+        // Calculate cumulative values
+        const cumulativeData = chartData.reduce((acc, data, index) => {
+          const prev = acc[index - 1] || {};
+          const current: ChartData = { date: data.date };
+          taskTypes.forEach((taskType) => {
+            current[taskType] = (prev[taskType] as number || 0) + (data[taskType] as number || 0);
+          });
+          acc.push(current);
+          return acc;
+        }, [] as ChartData[]);
+        return (
+          <LineChart data={cumulativeData}>
+            <CartesianGrid strokeDasharray="3 3" />
+            <XAxis dataKey="date" />
+            <YAxis
+              tickFormatter={(tick: number) => `${Math.round(tick)}`} 
+              allowDecimals={false}
+            />
+            <Tooltip
+              contentStyle={tooltipStyles}
+            />
+            <Legend />
+            {taskTypes.map((taskType, index) => (
+              <Line key={taskType} dataKey={taskType} stroke={getColorForTaskType(taskType)} />
+            ))}
+          </LineChart>
+        );
+      default:
+        return <></>;
+    }
+  };
+
   return (
     <Card>
       <CardHeader>
@@ -288,57 +396,20 @@ export const ActivityGraph: React.FC = () => {
             ))}
           </SelectContent>
         </Select>
+        <Select value={viewType} onValueChange={(value) => setViewType(value as 'lineChart' | 'stackedBarChart' | 'cumulative')}>
+          <SelectTrigger>
+            <SelectValue placeholder="Select View" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="lineChart">Line Chart</SelectItem>
+            <SelectItem value="stackedBarChart">Stacked Bar Chart</SelectItem>
+            <SelectItem value="cumulative">Cumulative Chart</SelectItem>
+          </SelectContent>
+        </Select>
         </div>
         {filteredChartData.length > 0 ? (
           <ResponsiveContainer width="100%" height={400}>
-            <AreaChart data={filteredChartData}>
-              <defs>
-              {selectedCategory === 'All'
-                ? taskTypes.map((taskType, index) => (
-                    <linearGradient key={taskType} id={`color${index}`} x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor={getColorForTaskType(taskType)} stopOpacity={0.8} />
-                      <stop offset="95%" stopColor={getColorForTaskType(taskType)} stopOpacity={0} />
-                    </linearGradient>
-                  ))
-                : 
-                  <linearGradient id={`color0`} x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor={getColorForTaskType(selectedCategory)} stopOpacity={0.8} />
-                    <stop offset="95%" stopColor={getColorForTaskType(selectedCategory)} stopOpacity={0} />
-                  </linearGradient>
-              }
-              </defs>
-              <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey="date" />
-              <YAxis
-                domain={[0, maxValue * 1.5]}
-                tickFormatter={(tick: number) => `${Math.round(tick)}`} 
-                allowDecimals={false}
-              />
-              <Tooltip
-                contentStyle={tooltipStyles}
-              />
-              <Legend />
-              {selectedCategory === 'All' ? (
-                taskTypes.map((taskType, index) => (
-                  <Area
-                    key={taskType}
-                    type="monotone"
-                    dataKey={taskType}
-                    stroke={getColorForTaskType(taskType)} 
-                    fillOpacity={1}
-                    fill={`url(#color${index})`}
-                  />
-                ))
-              ) : (
-                <Area
-                  type="monotone"
-                  dataKey={selectedCategory}
-                  stroke={getColorForTaskType(selectedCategory)}
-                  fillOpacity={1}
-                  fill={`url(#color0)`}
-                />
-              )}
-            </AreaChart>
+            {renderChart()}
           </ResponsiveContainer>
         ) : (
           <p>No task data available.</p>
