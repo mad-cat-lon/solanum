@@ -27,6 +27,21 @@ interface Settings {
   }[];
 }
 
+const defaultCategories = [
+  {
+    name: 'Work',
+    color: '#000000'
+  },
+  {
+    name: 'Long Break',
+    color: '#00FFFF'
+  },
+  {
+    name: 'Short Break',
+    color: '#89CFF0'
+  }
+]
+
 export default function Component() {
   const [time, setTime] = useState(25 * 60)
   const [isActive, setIsActive] = useState(false)
@@ -57,7 +72,7 @@ export default function Component() {
             longBreak: fetchedSettings.longBreak ?? 15,
             shortBreak: fetchedSettings.shortBreak ?? 10,
             defaultTimeLength: fetchedSettings.defaultTimeLength ?? 25,
-            activityCategories: fetchedSettings.activityCategories ?? [{ name: 'Work', color: '#000000' }]
+            activityCategories: fetchedSettings.activityCategories ?? defaultCategories
           };
           setSettings(defaultSettings);
           setCategories(defaultSettings.activityCategories.map(category => category.name));
@@ -69,7 +84,7 @@ export default function Component() {
             longBreak: 15,
             shortBreak: 5,
             defaultTimeLength: 25,
-            activityCategories: [{ name: 'Work', color: '#000000' }]
+            activityCategories: defaultCategories
           });
           setTime(25 * 60);
         }
@@ -88,9 +103,11 @@ export default function Component() {
             longBreak: 15,
             shortBreak: 5,
             defaultTimeLength: 25,
-            activityCategories: [{ name: 'Work', color: '#000000' }]
+            activityCategories: defaultCategories
           });
           setTime(25 * 60);
+          setCategories(defaultCategories.map(category => category.name))
+          setFilteredCategories(defaultCategories.map(category => category.name))
         }
       }
     };
@@ -297,7 +314,7 @@ export default function Component() {
                     </span>
                   )}
                   {isCommandOpen && (
-                    <Command className="absolute z-20 w-full mt-1 bg-white border border-gray-300 shadow-lg rounded-md overflow-hidden">
+                    <Command className="absolute z-20 w-full mt-1 overflow-hidden" style={{ minHeight: '150px' }}>
                       <CommandList>
                         {filteredCategories.length > 0 ? (
                           filteredCategories.map((category, index) => (
@@ -309,7 +326,7 @@ export default function Component() {
                             </CommandItem>
                           ))
                         ) : (
-                          <CommandEmpty>no existing categories found</CommandEmpty>
+                          <CommandEmpty>no matching categories found</CommandEmpty>
                         )}
                       </CommandList>
                     </Command>
