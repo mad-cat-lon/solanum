@@ -355,7 +355,7 @@
     --input: 210 60% 95%; /* Light pastel blue for input fields */
     --ring: 340 80% 70%; /* Soft pink for focus ring */
 
-    --radius: 0.5rem; /* Rounded corners */
+    --radius: 1rem; /* Rounded corners */
   }
   
   [data-theme="gothic"] {
