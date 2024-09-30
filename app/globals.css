@@ -3,10 +3,10 @@
 @tailwind utilities;
 
 @layer base {
-  :root {
+  :root, [data-theme="light"] {
     --background: 0 0% 100%;
     --foreground: 222.2 84% 4.9%;
-
+    
     --card: 0 0% 100%;
     --card-foreground: 222.2 84% 4.9%;
  
@@ -33,15 +33,9 @@
     --ring: 222.2 84% 4.9%;
  
     --radius: 0.5rem;
-
-    --chart-1: 12 76% 61%;
-    --chart-2: 173 58% 39%;
-    --chart-3: 197 37% 24%;
-    --chart-4: 43 74% 66%;
-    --chart-5: 27 87% 67%;
   }
  
-  .dark {
+  [data-theme="dark"] {
     --background: 222.2 84% 4.9%;
     --foreground: 210 40% 98%;
  
@@ -69,20 +63,250 @@
     --border: 217.2 32.6% 17.5%;
     --input: 217.2 32.6% 17.5%;
     --ring: 212.7 26.8% 83.9%;
-
-    --chart-1: 220 70% 50%;
-    --chart-2: 160 60% 45%;
-    --chart-3: 30 80% 55%;
-    --chart-4: 280 65% 60%;
-    --chart-5: 340 75% 55%;
   }
-}
+
+  [data-theme="fall"] {
+    --background: 43 70% 97%;
+    --foreground: 24 10% 10%;
  
-@layer base {
+    --card: 39 70% 90%;
+    --card-foreground: 24 10% 10%;
+ 
+    --popover: 43 70% 97%;
+    --popover-foreground: 24 10% 10%;
+ 
+    --primary: 24 90% 30%;
+    --primary-foreground: 43 70% 97%;
+ 
+    --secondary: 32 60% 80%;
+    --secondary-foreground: 24 10% 10%;
+ 
+    --muted: 32 60% 80%;
+    --muted-foreground: 24 8% 40%;
+ 
+    --accent: 16 80% 50%;
+    --accent-foreground: 43 70% 97%;
+ 
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 43 70% 97%;
+ 
+    --border: 24 30% 70%;
+    --input: 24 30% 70%;
+    --ring: 24 90% 30%;
+ 
+    --radius: 0.5rem;
+  }
+
+  [data-theme="cherry"] {
+    --background: 12 60% 95%; 
+    --foreground: 0 50% 30%; 
+    --card: 12 60% 95%;
+    --card-foreground: 0 50% 30%;
+  
+    --popover: 12 60% 95%;
+    --popover-foreground: 0 50% 30%;
+  
+    --primary: 0 80% 40%; 
+    --primary-foreground: 210 40% 98%;
+  
+    --secondary: 15 50% 85%; 
+    --secondary-foreground: 0 50% 30%;
+  
+    --muted: 15 50% 85%;
+    --muted-foreground: 0 20% 50%;
+  
+    --accent: 0 100% 70%; 
+    --accent-foreground: 210 40% 98%;
+  
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 210 40% 98%;
+  
+    --border: 12 60% 85%;
+    --input: 12 60% 85%;
+    --ring: 0 50% 30%;
+  }
+
+  [data-theme="ocean"] {
+    --background: 200 100% 97%;
+    --foreground: 200 50% 20%;
+ 
+    --card: 200 60% 95%;
+    --card-foreground: 200 50% 20%;
+ 
+    --popover: 200 100% 97%;
+    --popover-foreground: 200 50% 20%;
+ 
+    --primary: 200 100% 40%;
+    --primary-foreground: 200 100% 97%;
+ 
+    --secondary: 200 60% 80%;
+    --secondary-foreground: 200 50% 20%;
+ 
+    --muted: 200 60% 80%;
+    --muted-foreground: 200 40% 40%;
+ 
+    --accent: 220 80% 50%;
+    --accent-foreground: 200 100% 97%;
+ 
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 200 100% 97%;
+ 
+    --border: 200 50% 70%;
+    --input: 200 50% 70%;
+    --ring: 200 100% 40%;
+ 
+    --radius: 0.5rem;
+  }
+
+  [data-theme="forest"] {
+    --background: 120 40% 97%;
+    --foreground: 120 60% 15%;
+ 
+    --card: 120 30% 95%;
+    --card-foreground: 120 60% 15%;
+ 
+    --popover: 120 40% 97%;
+    --popover-foreground: 120 60% 15%;
+ 
+    --primary: 120 80% 30%;
+    --primary-foreground: 120 40% 97%;
+ 
+    --secondary: 120 30% 80%;
+    --secondary-foreground: 120 60% 15%;
+ 
+    --muted: 120 30% 80%;
+    --muted-foreground: 120 50% 35%;
+ 
+    --accent: 150 80% 40%;
+    --accent-foreground: 120 40% 97%;
+ 
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 120 40% 97%;
+ 
+    --border: 120 40% 70%;
+    --input: 120 40% 70%;
+    --ring: 120 80% 30%;
+ 
+    --radius: 0.5rem;
+  }
+
+  [data-theme="sunset"] {
+    --background: 30 100% 97%;
+    --foreground: 30 60% 20%;
+ 
+    --card: 30 60% 95%;
+    --card-foreground: 30 60% 20%;
+ 
+    --popover: 30 100% 97%;
+    --popover-foreground: 30 60% 20%;
+ 
+    --primary: 30 100% 50%;
+    --primary-foreground: 30 100% 97%;
+ 
+    --secondary: 30 60% 80%;
+    --secondary-foreground: 30 60% 20%;
+ 
+    --muted: 30 60% 80%;
+    --muted-foreground: 30 40% 40%;
+ 
+    --accent: 0 80% 60%;
+    --accent-foreground: 30 100% 97%;
+ 
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 30 100% 97%;
+ 
+    --border: 30 50% 70%;
+    --input: 30 50% 70%;
+    --ring: 30 100% 50%;
+ 
+    --radius: 0.5rem;
+  }
+
+  [data-theme="light-solarized"] {
+    --background: 45 88% 96%;
+    --foreground: 192 15% 32%;
+    
+    --card: 45 88% 96%;
+    --card-foreground: 192 15% 32%;
+ 
+    --popover: 45 88% 96%;
+    --popover-foreground: 192 15% 32%;
+ 
+    --primary: 192 15% 32%;
+    --primary-foreground: 45 88% 96%;
+ 
+    --secondary: 184 30% 60%;
+    --secondary-foreground: 192 15% 32%;
+ 
+    --muted: 184 30% 60%;
+    --muted-foreground: 192 10% 50%;
+ 
+    --accent: 184 30% 60%;
+    --accent-foreground: 192 15% 32%;
+ 
+    --destructive: 12 75% 58%;
+    --destructive-foreground: 45 88% 96%;
+
+    --border: 184 30% 75%;
+    --input: 184 30% 75%;
+    --ring: 192 15% 32%;
+ 
+    --radius: 0.5rem;
+  }
+ 
+  [data-theme="dark-solarized"] {
+    --background: 192 15% 15%;
+    --foreground: 45 88% 96%;
+ 
+    --card: 192 15% 15%;
+    --card-foreground: 45 88% 96%;
+ 
+    --popover: 192 15% 15%;
+    --popover-foreground: 45 88% 96%;
+ 
+    --primary: 45 88% 96%;
+    --primary-foreground: 192 15% 15%;
+ 
+    --secondary: 184 30% 25%;
+    --secondary-foreground: 45 88% 96%;
+ 
+    --muted: 184 30% 25%;
+    --muted-foreground: 45 60% 60%;
+ 
+    --accent: 184 30% 25%;
+    --accent-foreground: 45 88% 96%;
+ 
+    --destructive: 0 60% 40%;
+    --destructive-foreground: 45 88% 96%;
+ 
+    --border: 184 30% 25%;
+    --input: 184 30% 25%;
+    --ring: 184 40% 50%;
+  }
   * {
     @apply border-border;
+    @apply transition-colors duration-300 ease-in-out; 
   }
+
   body {
-    @apply bg-background text-foreground;
+    @apply bg-background text-foreground transition-colors duration-300 ease-in-out;
+  }
+}
+
+
+@layer utilities {
+  .icon-transition {
+    position: relative;
+    display: inline-block;
+    transition: opacity 0.5s ease, transform 0.5s ease; /* Control opacity and scale transitions */
+  }
+
+  .theme-transition {
+    @apply transition-all duration-300 ease-in-out;
+  }
+
+  .theme-transition:hover {
+    opacity: 0.7;
+    transform: scale(1.2); 
   }
 }

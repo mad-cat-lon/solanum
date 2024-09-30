@@ -6,7 +6,7 @@ import { Button, buttonVariants } from "@/components/ui/button";
 import Link from "next/link";
 import { FC } from "react";
 import { useUser } from "reactfire";
-import { ModeToggle } from "@/components/navbar/toggle-theme";
+import { ThemeToggle } from "@/components/navbar/toggle-theme";
 
 export const NavbarUserLinks: FC = () => {
   const { data, hasEmitted } = useUser();
@@ -16,7 +16,7 @@ export const NavbarUserLinks: FC = () => {
       <Link href="/stats" className={buttonVariants()}>
         stats
       </Link>
-      <ModeToggle/>
+      <ThemeToggle/>
       {hasEmitted && data ? (
         <>
           <UserNav />
