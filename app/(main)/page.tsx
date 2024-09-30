@@ -217,10 +217,10 @@ export default function Component() {
               <Button onClick={() => startTimer(settings?.defaultTimeLength || 25, currentActivity)} className="bg-red-600 hover:bg-red-700 text-white text-xl py-6 px-8">
                 lock in!
               </Button>
-              <Button onClick={() => startTimer(settings?.shortBreak || 10, 'Short Break')} className="text-xl py-6 px-8">
+              <Button onClick={() => startTimer(settings?.shortBreak || 10, 'Short Break')} variant="secondary" className="text-xl py-6 px-8">
                 short break
               </Button>
-              <Button onClick={() => startTimer(settings?.longBreak || 15, 'Long Break')} className="text-xl py-6 px-8">
+              <Button onClick={() => startTimer(settings?.longBreak || 15, 'Long Break')} variant="secondary" className="text-xl py-6 px-8">
                 long break
               </Button>
               <Button onClick={resetTimer} variant="outline" className="text-xl py-6 px-8">

@@ -283,9 +283,117 @@
     --input: 184 30% 25%;
     --ring: 184 40% 50%;
   }
+
+  [data-theme="cyberpunk"] {
+    --background: 260 40% 10%; /* Dark purple/black */
+    --foreground: 340 90% 60%; /* Neon pink */
+    
+    --card: 250 30% 15%; /* Dark background for cards */
+    --card-foreground: 340 90% 60%; /* Neon pink text */
+    
+    --popover: 260 40% 10%;
+    --popover-foreground: 340 90% 60%;
+    
+    --primary: 180 90% 50%; /* Electric green */
+    --primary-foreground: 260 40% 10%;
+    
+    --secondary: 200 100% 50%; /* Bright blue */
+    --secondary-foreground: 260 40% 10%;
+    
+    --muted: 250 30% 25%; /* Dim blue */
+    --muted-foreground: 210 100% 80%; /* Bright cyan */
+    
+    --accent: 330 100% 60%; /* Neon magenta */
+    --accent-foreground: 260 40% 10%;
+    
+    --destructive: 0 80% 50%; /* Red */
+    --destructive-foreground: 260 40% 10%;
+    
+    --border: 340 90% 60%; /* Neon pink */
+    --input: 250 30% 20%; 
+    --ring: 180 90% 50%; 
+    
+    --radius: 0.3rem; 
+
+    --font-family: monospace; 
+  
+    h1, h2, h3, h4, h5, h6 {
+      color: hsl(340, 90%, 60%);
+      text-shadow: 
+        0 0 4px rgba(255, 20, 147, 0.5), 
+        0 0 8px rgba(255, 20, 147, 0.3), 
+        0 0 12px rgba(255, 20, 147, 0.2); 
+    }
+  }
+
+  [data-theme="pastel"] {
+    --background: 210 60% 95%; /* Light pastel blue */
+    --foreground: 0 0% 20%; /* Dark gray for text */
+
+    --card: 210 60% 90%; /* Very light blue for cards */
+    --card-foreground: 0 0% 20%; /* Dark gray for card text */
+
+    --popover: 210 60% 95%;
+    --popover-foreground: 0 0% 20%; /* Dark gray for popover text */
+
+    --primary: 340 80% 70%; /* Soft pink */
+    --primary-foreground: 0 0% 20%; /* Dark gray for primary text */
+
+    --secondary: 60 70% 80%; /* Soft yellow */
+    --secondary-foreground: 0 0% 20%; /* Dark gray for secondary text */
+
+    --muted: 60 70% 90%; /* Very light yellow */
+    --muted-foreground: 0 0% 20%; /* Dark gray for muted text */
+
+    --accent: 150 70% 80%; /* Soft mint green */
+    --accent-foreground: 0 0% 20%; /* Dark gray for accent text */
+
+    --destructive: 0 100% 60%; /* Bright red for destructive actions */
+    --destructive-foreground: 0 0% 20%; /* Dark gray for destructive text */
+
+    --border: 0 0% 80%; /* Light gray for borders */
+    --input: 210 60% 95%; /* Light pastel blue for input fields */
+    --ring: 340 80% 70%; /* Soft pink for focus ring */
+
+    --radius: 0.5rem; /* Rounded corners */
+  }
+  
+  [data-theme="gothic"] {
+    --background: 15 20% 5%; /* Deep black */
+    --foreground: 210 80% 90%; /* Soft white for text */
+
+    --card: 10 15% 10%; /* Very dark gray for cards */
+    --card-foreground: 210 80% 90%; /* Soft white for card text */
+
+    --popover: 10 15% 10%;
+    --popover-foreground: 210 80% 90%; /* Soft white for popover text */
+
+    --primary: 330 70% 40%; /* Dark crimson */
+    --primary-foreground: 210 80% 90%; /* Soft white for primary text */
+
+    --secondary: 210 50% 30%; /* Dark teal */
+    --secondary-foreground: 210 80% 90%; /* Soft white for secondary text */
+
+    --muted: 15 20% 20%; /* Dark muted color */
+    --muted-foreground: 210 80% 90%; /* Soft white for muted text */
+
+    --accent: 30 60% 70%; /* Soft gold for accents */
+    --accent-foreground: 210 80% 90%; /* Soft white for accent text */
+
+    --destructive: 0 100% 60%; /* Bright red for destructive actions */
+    --destructive-foreground: 210 80% 90%; /* Soft white for destructive text */
+
+    --border: 30 50% 20%; /* Dark gold for borders */
+    --input: 15 20% 10%; /* Dark background for input fields */
+    --ring: 330 100% 50%; /* Bright crimson for focus ring */
+
+    --radius: 0.5rem; /* Rounded corners */
+  }
+  
   * {
     @apply border-border;
-    @apply transition-colors duration-300 ease-in-out; 
+    @apply transition-colors duration-300 ease-in-out;
+    font-family: var(--font-family);
   }
 
   body {

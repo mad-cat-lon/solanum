@@ -9,7 +9,10 @@ import {
   Trees,
   Sunset,
   CloudSun,
-  MoonStar
+  MoonStar,
+  Binary,
+  Skull,
+  Palette
 } from "lucide-react"
 import { useTheme } from "next-themes"
 
@@ -19,6 +22,9 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
+  DropdownMenuSub,
+  DropdownMenuSubTrigger,
+  DropdownMenuSubContent
 } from "@/components/ui/dropdown-menu"
 
 export function ThemeToggle() {
@@ -58,6 +64,12 @@ export function ThemeToggle() {
         return <CloudSun className="h-[1.2rem] w-[1.2rem] theme-transition"/>
       case 'dark-solarized':
         return <MoonStar className="h-[1.2rem] w-[1.2rem] theme-transition"/>
+      case 'cyberpunk':
+        return <Binary className="h-[1.2rem] w-[1.2rem] theme-transition"/>
+      case 'gothic':
+        return <Skull className="h-[1.2rem] w-[1.2rem] theme-transition"/>
+      case 'pastel':
+        return <Palette className="h-[1.2rem] w-[1.2rem] theme-transition"/>
       default:
         return <SunIcon className="h-[1.2rem] w-[1.2rem] theme-transition"/>
     }
@@ -93,69 +105,120 @@ export function ThemeToggle() {
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end">
-        <DropdownMenuItem
-          onClick={() => handleClick("light")}
-          onMouseEnter={() => handleMouseEnter("light")}
-          onMouseLeave={handleMouseLeave}
-        >
-          light
-        </DropdownMenuItem>
-        <DropdownMenuItem
-          onClick={() => handleClick("dark")}
-          onMouseEnter={() => handleMouseEnter("dark")}
-          onMouseLeave={handleMouseLeave}
-        >
-          dark
-        </DropdownMenuItem>
-        <DropdownMenuItem
-          onClick={() => handleClick("fall")}
-          onMouseEnter={() => handleMouseEnter("fall")}
-          onMouseLeave={handleMouseLeave}
-        >
-          fall
-        </DropdownMenuItem>
-        <DropdownMenuItem
-          onClick={() => handleClick("cherry")}
-          onMouseEnter={() => handleMouseEnter("cherry")}
-          onMouseLeave={handleMouseLeave}
-        >
-          cherry
-        </DropdownMenuItem>
-        <DropdownMenuItem
-          onClick={() => handleClick("ocean")}
-          onMouseEnter={() => handleMouseEnter("ocean")}
-          onMouseLeave={handleMouseLeave}
-        >
-          ocean
-        </DropdownMenuItem>
-        <DropdownMenuItem
-          onClick={() => handleClick("forest")}
-          onMouseEnter={() => handleMouseEnter("forest")}
-          onMouseLeave={handleMouseLeave}
-        >
-          forest
-        </DropdownMenuItem>
-        <DropdownMenuItem
-          onClick={() => handleClick("sunset")}
-          onMouseEnter={() => handleMouseEnter("sunset")}
-          onMouseLeave={handleMouseLeave}
-        >
-          sunset
-        </DropdownMenuItem>
-        <DropdownMenuItem
-          onClick={() => handleClick("light-solarized")}
-          onMouseEnter={() => handleMouseEnter("light-solarized")}
-          onMouseLeave={handleMouseLeave}
-        >
-          light solarized
-        </DropdownMenuItem>
-        <DropdownMenuItem
-          onClick={() => handleClick("dark-solarized")}
-          onMouseEnter={() => handleMouseEnter("dark-solarized")}
-          onMouseLeave={handleMouseLeave}
-        >
-          dark solarized
-        </DropdownMenuItem>
+        <DropdownMenuSub>
+          <DropdownMenuSubTrigger>light themes</DropdownMenuSubTrigger>
+          <DropdownMenuSubContent>
+            <DropdownMenuItem
+              onClick={() => handleClick("light")}
+              onMouseEnter={() => handleMouseEnter("light")}
+              onMouseLeave={handleMouseLeave}
+            >
+              light
+            </DropdownMenuItem>
+            <DropdownMenuItem
+              onClick={() => handleClick("light-solarized")}
+              onMouseEnter={() => handleMouseEnter("light-solarized")}
+              onMouseLeave={handleMouseLeave}
+            >
+              light solarized
+            </DropdownMenuItem>
+          </DropdownMenuSubContent>
+        </DropdownMenuSub>
+
+        <DropdownMenuSub>
+          <DropdownMenuSubTrigger>dark themes</DropdownMenuSubTrigger>
+          <DropdownMenuSubContent>
+            <DropdownMenuItem
+              onClick={() => handleClick("dark")}
+              onMouseEnter={() => handleMouseEnter("dark")}
+              onMouseLeave={handleMouseLeave}
+            >
+              dark
+            </DropdownMenuItem>
+            <DropdownMenuItem
+              onClick={() => handleClick("dark-solarized")}
+              onMouseEnter={() => handleMouseEnter("dark-solarized")}
+              onMouseLeave={handleMouseLeave}
+            >
+              dark solarized
+            </DropdownMenuItem>
+          </DropdownMenuSubContent>
+        </DropdownMenuSub>
+
+        <DropdownMenuSub>
+          <DropdownMenuSubTrigger>nature</DropdownMenuSubTrigger>
+          <DropdownMenuSubContent>
+            <DropdownMenuItem
+              onClick={() => handleClick("fall")}
+              onMouseEnter={() => handleMouseEnter("fall")}
+              onMouseLeave={handleMouseLeave}
+            >
+              fall
+            </DropdownMenuItem>
+            <DropdownMenuItem
+              onClick={() => handleClick("sunset")}
+              onMouseEnter={() => handleMouseEnter("sunset")}
+              onMouseLeave={handleMouseLeave}
+            >
+              sunset
+            </DropdownMenuItem>
+              <DropdownMenuItem
+              onClick={() => handleClick("cherry")}
+              onMouseEnter={() => handleMouseEnter("cherry")}
+              onMouseLeave={handleMouseLeave}
+            >
+              cherry
+            </DropdownMenuItem>
+            <DropdownMenuItem
+              onClick={() => handleClick("ocean")}
+              onMouseEnter={() => handleMouseEnter("ocean")}
+              onMouseLeave={handleMouseLeave}
+            >
+              ocean
+            </DropdownMenuItem>
+            <DropdownMenuItem
+              onClick={() => handleClick("forest")}
+              onMouseEnter={() => handleMouseEnter("forest")}
+              onMouseLeave={handleMouseLeave}
+            >
+              forest
+            </DropdownMenuItem>
+            <DropdownMenuItem
+              onClick={() => handleClick("sunset")}
+              onMouseEnter={() => handleMouseEnter("sunset")}
+              onMouseLeave={handleMouseLeave}
+            >
+              sunset
+            </DropdownMenuItem>
+          </DropdownMenuSubContent>
+        </DropdownMenuSub>
+
+        <DropdownMenuSub>
+          <DropdownMenuSubTrigger>stylized</DropdownMenuSubTrigger>
+          <DropdownMenuSubContent>
+            <DropdownMenuItem
+            onClick={() => handleClick("cyberpunk")}
+            onMouseEnter={() => handleMouseEnter("cyberpunk")}
+            onMouseLeave={handleMouseLeave}
+            >
+              cyberpunk
+            </DropdownMenuItem>
+            <DropdownMenuItem
+            onClick={() => handleClick("gothic")}
+            onMouseEnter={() => handleMouseEnter("gothic")}
+            onMouseLeave={handleMouseLeave}
+            >
+              gothic
+            </DropdownMenuItem>
+            <DropdownMenuItem
+            onClick={() => handleClick("pastel")}
+            onMouseEnter={() => handleMouseEnter("pastel")}
+            onMouseLeave={handleMouseLeave}
+            >
+              pastel
+            </DropdownMenuItem>
+          </DropdownMenuSubContent>
+        </DropdownMenuSub>
         <DropdownMenuItem
           onClick={() => handleClick("system")}
           onMouseEnter={() => handleMouseEnter("system")}
