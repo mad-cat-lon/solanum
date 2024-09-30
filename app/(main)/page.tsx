@@ -3,15 +3,19 @@
 import { useState, useEffect, useRef } from 'react'
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip"
 import { toast } from "@/components/ui/use-toast"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Command, CommandInput, CommandList, CommandEmpty, CommandItem } from "@/components/ui/command"
-import { ResetIcon } from '@radix-ui/react-icons'
+import { ResetIcon, ActivityLogIcon, GearIcon } from '@radix-ui/react-icons'
 import { collection, addDoc, query, getDocs, getDoc, setDoc, doc } from 'firebase/firestore';
 import { useFirestore, useUser } from 'reactfire';
-
-import { SignupModal } from '@/components/signup-modal'
+import { useRouter } from 'next/navigation'
 
 interface Settings {
   longBreak: number;
@@ -26,7 +30,7 @@ interface Settings {
 export default function Component() {
   const [time, setTime] = useState(25 * 60)
   const [isActive, setIsActive] = useState(false)
-  const [currentActivity, setCurrentActivity] = useState('Work')
+  const [currentActivity, setCurrentActivity] = useState('')
   const [categories, setCategories] = useState<string[]>([])
   const [filteredCategories, setFilteredCategories] = useState<string[]>([])
   const [isCommandOpen, setIsCommandOpen] = useState(false)
@@ -35,18 +39,18 @@ export default function Component() {
   const hasAlerted = useRef(false)
   const audioRef = useRef<HTMLAudioElement | null>(null)
   const inputRef = useRef<HTMLInputElement>(null)
-  const [isModalOpen, setIsModalOpen] = useState(false) // Modal state
   const [settings, setSettings] = useState<Settings | null>(null) // Track user settings
-
+  const router = useRouter()
   const firestore = useFirestore()
   const { data: user } = useUser()
 
   useEffect(() => {
-    if (user) {
-      const fetchSettings = async () => {
+    const fetchSettings = async () => {
+      if (user) {
+        // Fetch settings from Firebase for logged-in users
         const userRef = doc(firestore, `users/${user.uid}`);
         const settingsDoc = await getDoc(userRef);
-
+  
         if (settingsDoc.exists()) {
           const fetchedSettings = settingsDoc.data().settings as Settings || {};
           const defaultSettings: Settings = {
@@ -60,6 +64,7 @@ export default function Component() {
           setFilteredCategories(defaultSettings.activityCategories.map(category => category.name));
           setTime(defaultSettings.defaultTimeLength * 60);
         } else {
+          // Fallback to default settings
           setSettings({
             longBreak: 15,
             shortBreak: 5,
@@ -68,10 +73,29 @@ export default function Component() {
           });
           setTime(25 * 60);
         }
-      };
-
-      fetchSettings();
-    }
+      } else {
+        // Load settings from localStorage for logged-out users
+        const localSettings = localStorage.getItem('settings');
+        if (localSettings) {
+          const parsedSettings = JSON.parse(localSettings) as Settings;
+          setSettings(parsedSettings);
+          setCategories(parsedSettings.activityCategories.map(category => category.name));
+          setFilteredCategories(parsedSettings.activityCategories.map(category => category.name));
+          setTime(parsedSettings.defaultTimeLength * 60);
+        } else {
+          // Fallback to default settings if no localSettings are found
+          setSettings({
+            longBreak: 15,
+            shortBreak: 5,
+            defaultTimeLength: 25,
+            activityCategories: [{ name: 'Work', color: '#000000' }]
+          });
+          setTime(25 * 60);
+        }
+      }
+    };
+  
+    fetchSettings();
   }, [firestore, user]);
 
   useEffect(() => {
@@ -117,7 +141,7 @@ export default function Component() {
     }
     setIsActive(false)
     setTime((settings?.defaultTimeLength?? 25) * 60) 
-    setCurrentActivity('Work')
+    setCurrentActivity('')
     document.title = `Lock in!`
     hasAlerted.current = false
   }
@@ -150,25 +174,44 @@ export default function Component() {
   };
 
   const handleAddNewCategory = async () => {
-    if (user && currentActivity !== 'Work' && !filteredCategories.includes(currentActivity)) {
-      // Add new category to the settings
-      const existingSettings = settings || {
-        longBreak: 15,
-        shortBreak: 10,
-        defaultTimeLength: 25,
-        activityCategories: []
+    if (currentActivity !== '' && !filteredCategories.includes(currentActivity)) {
+      if (user) {
+        // Add new category to the settings in Firebase for logged-in users
+        const existingSettings = settings || {
+          longBreak: 15,
+          shortBreak: 10,
+          defaultTimeLength: 25,
+          activityCategories: []
+        };
+        const updatedCategories = [...existingSettings.activityCategories, { name: currentActivity, color: '#ff0000' }];
+        const updatedSettings = { ...existingSettings, activityCategories: updatedCategories };
+  
+        setSettings(updatedSettings);
+        setFilteredCategories(updatedCategories.map(category => category.name));
+  
+        // Update Firestore
+        const userRef = doc(firestore, `users/${user.uid}`);
+        await setDoc(userRef, { settings: updatedSettings }, { merge: true });
+        toast({ title: `added new category "${currentActivity}" to your saved list!` });
+      } else {
+        // Save the new category to localStorage for logged-out users
+        const existingSettings = settings || {
+          longBreak: 15,
+          shortBreak: 10,
+          defaultTimeLength: 25,
+          activityCategories: []
+        };
+        const updatedCategories = [...existingSettings.activityCategories, { name: currentActivity, color: '#ff0000' }];
+        const updatedSettings = { ...existingSettings, activityCategories: updatedCategories };
+  
+        setSettings(updatedSettings);
+        setCategories(updatedSettings.activityCategories.map(category => category.name))
+        setFilteredCategories(updatedSettings.activityCategories.map(category => category.name));
+  
+        // Save settings to localStorage
+        localStorage.setItem('settings', JSON.stringify(updatedSettings));
+        toast({ title: `added new category "${currentActivity}" to your local settings!` });
       }
-      const updatedCategories = [...existingSettings.activityCategories, { name: currentActivity, color: '#ff0000' }];
-      const updatedSettings = { ...existingSettings, activityCategories: updatedCategories };
-      
-      setSettings(updatedSettings);
-      setFilteredCategories(updatedCategories.map(category => category.name));
-
-      // Update Firestore
-      const userRef = doc(firestore, `users/${user.uid}`);
-      await setDoc(userRef, { settings: updatedSettings }, { merge: true });
-      toast({ title: `added new category "${currentActivity}" to your saved list!`})
-
     }
   };
 
@@ -194,13 +237,8 @@ export default function Component() {
   };
 
   const handleCategoryInputClick = () => {
-    if (!user) {
-      // User is not logged in, show modal
-      setIsModalOpen(true);
-    } else {
-      // Focus on the input and allow interaction
-      inputRef.current?.focus();
-    }
+    // Focus on the input and allow interaction
+    inputRef.current?.focus();
   };
 
   return (
@@ -228,62 +266,84 @@ export default function Component() {
                 reset
               </Button>
             </div>
-            <div className="w-full max-w-md relative">
-              <Label htmlFor="activity-category" className="block text-xl font-medium mb-2">
-                activity category
-              </Label>
-              <div className="relative flex items-center">
-                <Input
-                  type="text"
-                  id="activity-category"
-                  ref={inputRef}
-                  value={currentActivity}
-                  onClick={handleCategoryInputClick}
-                  onChange={(e) => handleTaskCategoryChange(e.target.value)}
-                  onKeyDown={handleKeyDown}
-                  onFocus={() => setIsCommandOpen(true)}
-                  onBlur={() => setIsCommandOpen(false)} // Add onBlur to hide the Command
-                  className="text-xl py-3 pl-4 pr-20 w-full bg-transparent caret-black" 
-                  placeholder="enter activity category"
-                  style={{ caretColor: 'black' }} // Ensures the caret remains visible
-                />
-                {suggestion && suggestion !== currentActivity && (
-                  <span 
-                    className="absolute top-1/2 left-4 transform -translate-y-1/2 pointer-events-none text-gray-400"
-                    style={{ 
-                      paddingLeft: `${currentActivity.length}ch`, // Dynamically move the suggestion to the right
-                      fontSize: 'inherit', // Match input text size
-                      lineHeight: 'inherit', // Match input line height
-                      fontWeight: 'inherit', // Match input font weight
-                    }} 
-                  >
-                    {suggestion.slice(currentActivity.length)}
-                  </span>
-                )}
+            <div className="w-full max-w-md flex flex-col items-center">
+              <div className="flex items-center space-x-4 w-full">
+                <div className="relative flex-1">
+                  <Input
+                    type="text"
+                    id="activity-category"
+                    ref={inputRef}
+                    value={currentActivity}
+                    onClick={handleCategoryInputClick}
+                    onChange={(e) => handleTaskCategoryChange(e.target.value)}
+                    onKeyDown={handleKeyDown}
+                    onFocus={() => setIsCommandOpen(true)}
+                    onBlur={() => setIsCommandOpen(false)}
+                    className="py-3 pl-4 pr-20 w-full bg-transparent border-2 border-gray-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 rounded-md caret-black transition-all duration-150 ease-in-out"
+                    placeholder="enter activity category"
+                    style={{ caretColor: 'black', fontSize: '1rem'}}
+                  />
+                  {suggestion && suggestion !== currentActivity && (
+                    <span
+                      className="absolute top-1/2 left-4 transform -translate-y-1/2 text-gray-400 pointer-events-none"
+                      style={{
+                        paddingLeft: `${currentActivity.length}ch`,
+                        fontSize: 'inherit',
+                        lineHeight: 'inherit',
+                        fontWeight: 'inherit',
+                      }}
+                    >
+                      {suggestion.slice(currentActivity.length)}
+                    </span>
+                  )}
+                  {isCommandOpen && (
+                    <Command className="absolute z-20 w-full mt-1 bg-white border border-gray-300 shadow-lg rounded-md overflow-hidden">
+                      <CommandList>
+                        {filteredCategories.length > 0 ? (
+                          filteredCategories.map((category, index) => (
+                            <CommandItem
+                              key={index}
+                              onMouseDown={() => handleCategorySelect(category)}
+                            >
+                              {category}
+                            </CommandItem>
+                          ))
+                        ) : (
+                          <CommandEmpty>no existing categories found</CommandEmpty>
+                        )}
+                      </CommandList>
+                    </Command>
+                  )}
+                </div>
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button onClick={() => router.push('/stats')} variant="outline">
+                        <ActivityLogIcon className="h-6 w-6" />
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent side="bottom">
+                      view stats
+                    </TooltipContent>
+                  </Tooltip>
+                  </TooltipProvider>
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button onClick={() => router.push('/settings')} variant="outline">
+                        <GearIcon className="h-6 w-6" />
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent side="bottom">
+                      settings
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
               </div>
-              {isCommandOpen && (
-                <Command className="absolute z-10 w-full mt-1">
-                  <CommandList>
-                    {filteredCategories.length > 0 ? (
-                      filteredCategories.map((category, index) => (
-                        <CommandItem
-                          key={index}
-                          onMouseDown={() => handleCategorySelect(category)}
-                        >
-                          {category}
-                        </CommandItem>
-                      ))
-                    ) : (
-                      <CommandEmpty>no existing categories found</CommandEmpty>
-                    )}
-                  </CommandList>
-                </Command>
-              )}
             </div>
           </div>
         </CardContent>
       </Card>
-      <SignupModal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} />
     </div>
   )
 }

@@ -48,11 +48,11 @@ export const SignInForm: FC<SignInFormProps> = ({ onShowSignUp }) => {
       setIsLoading(true);
       await signInWithEmailAndPassword(auth, email, password);
       toast({
-        title: "Success!",
-        description: "You have been signed in.",
+        title: "success!",
+        description: "you have been signed in.",
       });
     } catch (error) {
-      toast({ title: "Error Signing In", description: `${error}` });
+      toast({ title: "error Signing In", description: `${error}` });
     } finally {
       setIsLoading(false);
     }
@@ -67,7 +67,7 @@ export const SignInForm: FC<SignInFormProps> = ({ onShowSignUp }) => {
             name="email"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Email Address</FormLabel>
+                <FormLabel>email</FormLabel>
                 <FormControl>
                   <Input type="email" {...field} />
                 </FormControl>
@@ -80,7 +80,7 @@ export const SignInForm: FC<SignInFormProps> = ({ onShowSignUp }) => {
             name="password"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Password</FormLabel>
+                <FormLabel>password</FormLabel>
                 <FormControl>
                   <Input type="password" {...field} />
                 </FormControl>
@@ -89,20 +89,20 @@ export const SignInForm: FC<SignInFormProps> = ({ onShowSignUp }) => {
             )}
           />
           <Button type="submit" disabled={isLoading}>
-            Submit
+            submit
           </Button>
         </form>
       </Form>
       <p className="mt-4 text-sm">
-        Forgot password?{" "}
+        forgot password?{" "}
         <Button variant="link" onClick={() => setIsResetOpen(true)}>
-          Reset
+          reset
         </Button>
       </p>
       <p className="text-sm">
-        Not a member?{" "}
+        don't have an account?{" "}
         <Button variant="link" onClick={onShowSignUp}>
-          Sign up instead.
+          sign up instead!
         </Button>
       </p>
       <ModalForgotPassword isOpen={isResetOpen} setIsOpen={setIsResetOpen} />

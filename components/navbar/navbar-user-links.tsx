@@ -16,6 +16,9 @@ export const NavbarUserLinks: FC = () => {
       <Link href="/stats" className={buttonVariants()}>
         stats
       </Link>
+      <Link href="/settings" className={buttonVariants()}>
+        settings
+      </Link>
       <ThemeToggle/>
       {hasEmitted && data ? (
         <>

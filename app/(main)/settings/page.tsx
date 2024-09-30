@@ -45,44 +45,87 @@ export default function SettingsPage() {
   const [settings, setSettings] = useState<Settings>(defaultSettings);
   const [taskCategories, setTaskCategories] = useState<Settings['activityCategories']>([]);
   const [colorPickerOpen, setColorPickerOpen] = useState<number | null>(null);
-
   useEffect(() => {
-    if (user) {
-      const fetchData = async () => {
+    const fetchData = async () => {
+      if (user) {
         const userRef = doc(firestore, `users/${user.uid}`);
-        const settingsDoc = await getDoc(userRef);
-
-        if (settingsDoc.exists()) {
-          const fetchedSettings = settingsDoc.data().settings as Partial<Settings> || {};
-
-          setSettings({
-            longBreak: fetchedSettings.longBreak || defaultSettings.longBreak,
-            shortBreak: fetchedSettings.shortBreak || defaultSettings.shortBreak,
-            defaultTimeLength: fetchedSettings.defaultTimeLength || defaultSettings.defaultTimeLength,
-            activityCategories: fetchedSettings.activityCategories || defaultSettings.activityCategories
-          });
+  
+        // Check if there are any local settings in localStorage
+        const localSettings = localStorage.getItem('settings');
+        let parsedLocalSettings: Partial<Settings> | null = null;
+  
+        if (localSettings) {
+          parsedLocalSettings = JSON.parse(localSettings) as Partial<Settings>;
         }
-
+  
+        // Fetch settings from Firebase for logged-in users
+        const settingsDoc = await getDoc(userRef);
+        let firebaseSettings: Partial<Settings> = {};
+        if (settingsDoc.exists()) {
+          firebaseSettings = settingsDoc.data().settings as Partial<Settings>;
+        }
+  
+        // Merge local settings and Firebase settings
+        const mergedSettings: Settings = {
+          longBreak: parsedLocalSettings?.longBreak ?? firebaseSettings?.longBreak ?? defaultSettings.longBreak,
+          shortBreak: parsedLocalSettings?.shortBreak ?? firebaseSettings?.shortBreak ?? defaultSettings.shortBreak,
+          defaultTimeLength: parsedLocalSettings?.defaultTimeLength ?? firebaseSettings?.defaultTimeLength ?? defaultSettings.defaultTimeLength,
+          activityCategories: [
+            // Include all Firebase categories first
+            ...(firebaseSettings.activityCategories ?? defaultSettings.activityCategories),
+  
+            // Add only local categories that don't exist in Firebase
+            ...(parsedLocalSettings?.activityCategories ?? []).filter(
+              localCategory => !firebaseSettings.activityCategories?.some(
+                firebaseCategory => firebaseCategory.name === localCategory.name
+              )
+            )
+          ]
+        };
+  
+        // Save merged settings to Firebase
+        await setDoc(userRef, { settings: mergedSettings }, { merge: true });
+  
+        // Clear localStorage after syncing
+        localStorage.removeItem('settings');
+        toast({ title: "synced local settings with your account!" });
+  
+        // Set the merged settings to the state
+        setSettings(mergedSettings);
+  
+        // Fetch task categories for logged-in users
         const taskCategoriesRef = collection(firestore, `users/${user.uid}/taskCategories`);
         const taskCategoriesSnapshot = await getDocs(taskCategoriesRef);
         const fetchedTaskCategories = taskCategoriesSnapshot.docs.map(doc => ({
           name: doc.data().name,
-          color: doc.data().color || generateRandomHexColor() 
+          color: doc.data().color || generateRandomHexColor()
         }));
         setTaskCategories(fetchedTaskCategories);
-      };
-
-      fetchData();
-    }
+      } else {
+        // Load settings from localStorage for logged-out users
+        const localSettings = localStorage.getItem('settings');
+        if (localSettings) {
+          setSettings(JSON.parse(localSettings));
+        }
+      }
+    };
+  
+    fetchData();
   }, [firestore, user]);
 
   const handleSaveSettings = async () => {
     if (user) {
+      // Save settings to Firebase for logged-in users
       const userRef = doc(firestore, `users/${user.uid}`);
       await setDoc(userRef, { settings }, { merge: true });
-      toast({ title: "settings saved!" })
+      toast({ title: "ettings saved!" });
+    } else {
+      // Save settings to localStorage for logged-out users
+      localStorage.setItem('settings', JSON.stringify(settings));
+      toast({ title: "settings saved locally!" });
     }
   };
+  
 
   const handleChange = (field: keyof Settings, value: any) => {
     setSettings({ ...settings, [field]: value });
