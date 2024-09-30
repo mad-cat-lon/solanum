@@ -27,9 +27,9 @@ export const AuthCard = () => {
     <>
       <Card>
         <CardHeader>
-          <CardTitle>{isShowingSignUp ? "Sign Up" : "Sign In"}</CardTitle>
+          <CardTitle>{isShowingSignUp ? "sign up" : "sign in"}</CardTitle>
           <CardDescription>
-             {isShowingSignUp ? "Sign up" : "Sign in"} to track your productivity.
+             {isShowingSignUp ? "sign up" : "sign in"} to track your productivity.
           </CardDescription>
         </CardHeader>
         <CardContent>

@@ -33,13 +33,13 @@ const ActivitySummary: React.FC = () => {
     weeklyAvg,
   } = useMemo(() => {
     const todayActivities = activities.filter(
-      (activity) => activity.timestamp.toDate() >= todayStart
+      (activity) => activity.timestamp && activity.timestamp.toDate() >= todayStart
     );
     const weeklyActivities = activities.filter(
-      (activity) => activity.timestamp.toDate() >= weekStart
+      (activity) => activity.timestamp && activity.timestamp.toDate() >= weekStart
     );
     const monthlyActivities = activities.filter(
-      (activity) => activity.timestamp.toDate() >= monthStart
+      (activity) => activity.timestamp && activity.timestamp.toDate() >= monthStart
     );
 
     const totalActivities = activities.length;

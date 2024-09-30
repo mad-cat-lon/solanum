@@ -10,7 +10,7 @@ import { ThemeProvider } from "@/components/theme-provider";
 const font = Work_Sans({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: "Lock in"
+  title: "lock in"
 };
 
 export default function RootLayout({ children }: { children: ReactNode }) {

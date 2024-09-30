@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from 'react'
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import { toast } from "@/components/ui/use-toast"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Command, CommandInput, CommandList, CommandEmpty, CommandItem } from "@/components/ui/command"
 import { ResetIcon } from '@radix-ui/react-icons'
@@ -166,6 +167,8 @@ export default function Component() {
       // Update Firestore
       const userRef = doc(firestore, `users/${user.uid}`);
       await setDoc(userRef, { settings: updatedSettings }, { merge: true });
+      toast({ title: `added new category "${currentActivity}" to your saved list!`})
+
     }
   };
 
@@ -212,27 +215,27 @@ export default function Component() {
             <div className="text-3xl font-semibold">{currentActivity}</div>
             <div className="flex flex-wrap justify-center gap-4">
               <Button onClick={() => startTimer(settings?.defaultTimeLength || 25, currentActivity)} className="bg-red-600 hover:bg-red-700 text-white text-xl py-6 px-8">
-                Lock in!
+                lock in!
               </Button>
               <Button onClick={() => startTimer(settings?.shortBreak || 10, 'Short Break')} className="text-xl py-6 px-8">
-                Short Break
+                short break
               </Button>
               <Button onClick={() => startTimer(settings?.longBreak || 15, 'Long Break')} className="text-xl py-6 px-8">
-                Long Break
+                long break
               </Button>
               <Button onClick={resetTimer} variant="outline" className="text-xl py-6 px-8">
                 <ResetIcon className="h-6 w-6 mr-2" />
-                Reset
+                reset
               </Button>
             </div>
             <div className="w-full max-w-md relative">
-              <Label htmlFor="task-category" className="block text-xl font-medium mb-2">
-                Task Category
+              <Label htmlFor="activity-category" className="block text-xl font-medium mb-2">
+                activity category
               </Label>
               <div className="relative flex items-center">
                 <Input
                   type="text"
-                  id="task-category"
+                  id="activity-category"
                   ref={inputRef}
                   value={currentActivity}
                   onClick={handleCategoryInputClick}
@@ -241,7 +244,7 @@ export default function Component() {
                   onFocus={() => setIsCommandOpen(true)}
                   onBlur={() => setIsCommandOpen(false)} // Add onBlur to hide the Command
                   className="text-xl py-3 pl-4 pr-20 w-full bg-transparent caret-black" 
-                  placeholder="Enter task category"
+                  placeholder="enter activity category"
                   style={{ caretColor: 'black' }} // Ensures the caret remains visible
                 />
                 {suggestion && suggestion !== currentActivity && (
@@ -271,7 +274,7 @@ export default function Component() {
                         </CommandItem>
                       ))
                     ) : (
-                      <CommandEmpty>No existing categories found</CommandEmpty>
+                      <CommandEmpty>no existing categories found</CommandEmpty>
                     )}
                   </CommandList>
                 </Command>

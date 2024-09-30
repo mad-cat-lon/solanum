@@ -14,7 +14,7 @@ export const NavbarUserLinks: FC = () => {
   return (
     <div className="flex flex-col items-center space-y-4 sm:flex-row sm:space-y-0 sm:space-x-4">
       <Link href="/stats" className={buttonVariants()}>
-        Stats
+        stats
       </Link>
       <ModeToggle/>
       {hasEmitted && data ? (
@@ -24,7 +24,7 @@ export const NavbarUserLinks: FC = () => {
       ) : (
         <>
           <Link href="/login" className={buttonVariants()}>
-            Login / Register &rarr;
+            login / register &rarr;
           </Link>
         </>
       )}

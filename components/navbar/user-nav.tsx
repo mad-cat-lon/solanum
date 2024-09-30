@@ -22,8 +22,8 @@ export function UserNav() {
   const doLogout = async () => {
     await signOut(getAuth());
     toast({
-      title: "Logged out",
-      description: "You have been logged out.",
+      title: "logged out",
+      description: "you have been logged out.",
     });
     router.replace("/");
   };
@@ -61,10 +61,10 @@ export function UserNav() {
         </DropdownMenuLabel>
         <DropdownMenuSeparator />
         <DropdownMenuGroup>
-          <DropdownMenuItem onClick={gotoSettings}>Settings</DropdownMenuItem>
+          <DropdownMenuItem onClick={gotoSettings}>settings</DropdownMenuItem>
         </DropdownMenuGroup>
         <DropdownMenuSeparator />
-        <DropdownMenuItem onClick={doLogout}>Log out</DropdownMenuItem>
+        <DropdownMenuItem onClick={doLogout}>log out</DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
   );

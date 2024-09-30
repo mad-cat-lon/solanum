@@ -22,7 +22,7 @@ export const NavBar: FC = () => {
             <div className="hidden md:flex justify-between grow">
               <div>
                 <Link href="https://github.com/mad-cat-lon/solanum" className={buttonVariants({ variant: "link" })}>
-                  Github
+                  github
                 </Link>
               </div>
               <div className="flex items-center space-x-4">
