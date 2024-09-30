@@ -11,7 +11,6 @@ import { toast } from "@/components/ui/use-toast"
 import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover"
 import { HexColorPicker } from "react-colorful" // Install this package
 
-// Define the type for settings
 interface Settings {
   longBreak: number;
   shortBreak: number;
@@ -23,17 +22,12 @@ interface Settings {
 }
 
 const generateRandomHexColor = () => {
-  // Generate red, green, and blue components between 0 and 255
   const red = Math.floor(Math.random() * 256);
   const green = Math.floor(Math.random() * 256);
   const blue = Math.floor(Math.random() * 256);
-
-  // Convert to hexadecimal and pad with zeroes if needed
   const redHex = red.toString(16).padStart(2, '0');
   const greenHex = green.toString(16).padStart(2, '0');
   const blueHex = blue.toString(16).padStart(2, '0');
-
-  // Concatenate into a full hex color string
   return `#${redHex}${greenHex}${blueHex}`;
 }
 
@@ -41,7 +35,6 @@ export default function SettingsPage() {
   const { data: user } = useUser();
   const firestore = useFirestore();
 
-  // Define default settings structure
   const defaultSettings: Settings = {
     longBreak: 15,
     shortBreak: 10,
@@ -49,23 +42,19 @@ export default function SettingsPage() {
     activityCategories: []
   };
 
-  // State to store user settings, initialize with default settings
   const [settings, setSettings] = useState<Settings>(defaultSettings);
   const [taskCategories, setTaskCategories] = useState<Settings['activityCategories']>([]);
-  const [colorPickerOpen, setColorPickerOpen] = useState<number | null>(null); // State to track which color picker is open
+  const [colorPickerOpen, setColorPickerOpen] = useState<number | null>(null);
 
   useEffect(() => {
     if (user) {
-      // Fetch existing user settings and task categories from Firestore
       const fetchData = async () => {
         const userRef = doc(firestore, `users/${user.uid}`);
         const settingsDoc = await getDoc(userRef);
 
         if (settingsDoc.exists()) {
-          // Cast the fetched data to the Settings type and merge with default values
           const fetchedSettings = settingsDoc.data().settings as Partial<Settings> || {};
 
-          // Merge fetched settings with default settings to handle missing fields
           setSettings({
             longBreak: fetchedSettings.longBreak || defaultSettings.longBreak,
             shortBreak: fetchedSettings.shortBreak || defaultSettings.shortBreak,
@@ -87,16 +76,14 @@ export default function SettingsPage() {
     }
   }, [firestore, user]);
 
-  // Function to save settings to Firestore
   const handleSaveSettings = async () => {
     if (user) {
       const userRef = doc(firestore, `users/${user.uid}`);
       await setDoc(userRef, { settings }, { merge: true });
-      toast({ title: "Settings saved!" })
+      toast({ title: "settings saved!" })
     }
   };
 
-  // Handlers to update local settings state
   const handleChange = (field: keyof Settings, value: any) => {
     setSettings({ ...settings, [field]: value });
   };
@@ -107,11 +94,26 @@ export default function SettingsPage() {
     setSettings({ ...settings, activityCategories: updatedCategories });
   };
 
+  const handleAddCategory = () => {
+    setSettings({
+      ...settings,
+      activityCategories: [
+        ...settings.activityCategories,
+        { name: '', color: generateRandomHexColor() }
+      ]
+    });
+  };
+
+  const handleDeleteCategory = (index: number) => {
+    const updatedCategories = [...settings.activityCategories];
+    updatedCategories.splice(index, 1);
+    setSettings({ ...settings, activityCategories: updatedCategories });
+  };
+
   const mergeTaskCategoriesWithSettings = () => {
     const mergedCategories = [...settings.activityCategories];
 
     taskCategories.forEach(taskCategory => {
-      // Add only if it doesn't already exist in the settings
       if (!mergedCategories.some(category => category.name === taskCategory.name)) {
         mergedCategories.push(taskCategory);
       }
@@ -133,13 +135,12 @@ export default function SettingsPage() {
     <div className="min-h-screen flex items-center justify-center p-4">
       <Card className="w-full max-w-3xl mx-auto">
         <CardHeader>
-          <CardTitle className="text-2xl font-bold text-center">Settings</CardTitle>
+          <CardTitle className="text-2xl font-bold text-center">settings</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="flex flex-col space-y-6">
-
             <div>
-              <Label htmlFor="defaultTimeLength">Default Timer Length (minutes)</Label>
+              <Label htmlFor="defaultTimeLength">default timer length (minutes)</Label>
               <Input
                 id="defaultTimeLength"
                 type="number"
@@ -149,7 +150,7 @@ export default function SettingsPage() {
             </div>
 
             <div>
-              <Label htmlFor="shortBreak">Short Break (minutes)</Label>
+              <Label htmlFor="shortBreak">short break (minutes)</Label>
               <Input
                 id="shortBreak"
                 type="number"
@@ -159,7 +160,7 @@ export default function SettingsPage() {
             </div>
 
             <div>
-              <Label htmlFor="longBreak">Long Break (minutes)</Label>
+              <Label htmlFor="longBreak">long break (minutes)</Label>
               <Input
                 id="longBreak"
                 type="number"
@@ -169,7 +170,7 @@ export default function SettingsPage() {
             </div>
 
             <div>
-              <Label>Activity Categories</Label>
+              <Label>activity categories</Label>
               {settings.activityCategories.map((category, index) => (
                 <div key={index} className="flex items-center space-x-4 space-y-2">
                   <Input
@@ -197,12 +198,19 @@ export default function SettingsPage() {
                       </PopoverContent>
                     )}
                   </Popover>
+                  <Button variant="destructive" onClick={() => handleDeleteCategory(index)}>
+                    delete
+                  </Button>
                 </div>
               ))}
             </div>
 
+            <Button onClick={handleAddCategory}>
+              add new category
+            </Button>
+
             <Button onClick={handleSaveSettings}>
-              Save 
+              save
             </Button>
           </div>
         </CardContent>
