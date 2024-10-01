@@ -12,7 +12,11 @@ import {
   MoonStar,
   Binary,
   Skull,
-  Palette
+  Palette,
+  Clock,
+  Computer,
+  Cpu,
+  SunSnow
 } from "lucide-react"
 import { useTheme } from "next-themes"
 
@@ -32,7 +36,7 @@ export function ThemeToggle() {
   const [mounted, setMounted] = React.useState(false);
   const [savedTheme, setSavedTheme] = React.useState<string | undefined>(theme);
   const previewThemeRef = React.useRef<string | undefined>(theme); 
-
+  const monospacedThemes = ["cyberpunk", "vaporwave", "hacker"]
   // Wait until the component has mounted to prevent hydration issues
   React.useEffect(() => {
     setMounted(true)
@@ -70,22 +74,37 @@ export function ThemeToggle() {
         return <Skull className="h-[1.2rem] w-[1.2rem] theme-transition"/>
       case 'pastel':
         return <Palette className="h-[1.2rem] w-[1.2rem] theme-transition"/>
+      case 'vintage':
+        return <Clock className="h-[1.2rem] w-[1.2rem] theme-transition"/>
+      case 'vaporwave':
+        return <Computer className="h-[1.2rem] w-[1.2rem] theme-transition"/>
+      case 'hacker':
+        return <Cpu className="h-[1.2rem] w-[1.2rem] theme-transition"/>
+      case 'midnight-aurora ':
+        return <SunSnow className="h-[1.2rem] w-[1.2rem] theme-transition"/>
       default:
         return <SunIcon className="h-[1.2rem] w-[1.2rem] theme-transition"/>
     }
   }
 
   const handleMouseEnter = (newTheme: string) => {
-    if (previewThemeRef.current === undefined) {
-      // Store the current theme before hovering
-      previewThemeRef.current = savedTheme;
+    // Handle the bitmap font used for monospace theme which causes flickring
+    if (savedTheme && !monospacedThemes.includes(savedTheme)) {
+      if (newTheme && !monospacedThemes.includes(newTheme)) {
+        if (previewThemeRef.current === undefined) {
+          // Store the current theme before hovering
+          previewThemeRef.current = savedTheme;
+        }
+        setTheme(newTheme);
+      }
     }
-    setTheme(newTheme); 
   };
 
   const handleMouseLeave = () => {
-    setTheme(savedTheme || "light");
-    previewThemeRef.current = undefined;
+    if (savedTheme && !monospacedThemes.includes(savedTheme)) {
+      setTheme(savedTheme || "light");
+      previewThemeRef.current = undefined;
+    }
   };
 
   const handleClick = (newTheme: string) => {
@@ -190,6 +209,13 @@ export function ThemeToggle() {
             >
               sunset
             </DropdownMenuItem>
+            <DropdownMenuItem
+              onClick={() => handleClick("midnight-aurora")}
+              onMouseEnter={() => handleMouseEnter("midnight-aurora")}
+              onMouseLeave={handleMouseLeave}
+            >
+              midnight aurora
+            </DropdownMenuItem>
           </DropdownMenuSubContent>
         </DropdownMenuSub>
 
@@ -216,6 +242,27 @@ export function ThemeToggle() {
             onMouseLeave={handleMouseLeave}
             >
               pastel
+            </DropdownMenuItem>
+            <DropdownMenuItem
+            onClick={() => handleClick("vintage")}
+            onMouseEnter={() => handleMouseEnter("vintage")}
+            onMouseLeave={handleMouseLeave}
+            >
+              vintage
+            </DropdownMenuItem>
+            <DropdownMenuItem
+            onClick={() => handleClick("vaporwave")}
+            onMouseEnter={() => handleMouseEnter("vaporwave")}
+            onMouseLeave={handleMouseLeave}
+            >
+              vaporwave
+            </DropdownMenuItem>
+            <DropdownMenuItem
+            onClick={() => handleClick("hacker")}
+            onMouseEnter={() => handleMouseEnter("hacker")}
+            onMouseLeave={handleMouseLeave}
+            >
+              hacker
             </DropdownMenuItem>
           </DropdownMenuSubContent>
         </DropdownMenuSub>

@@ -3,6 +3,16 @@
 @tailwind utilities;
 
 @layer base {
+  
+  * {
+    @apply border-border;
+    @apply transition-colors duration-300 ease-in-out;
+    font-family: var(--font-family);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    
+  }
+
   :root, [data-theme="light"] {
     --background: 0 0% 100%;
     --foreground: 222.2 84% 4.9%;
@@ -222,6 +232,59 @@
     --radius: 0.5rem;
   }
 
+  [data-theme="midnight-aurora"] {
+    --background: 220 50% 12%; /* Deep navy blue */
+    --foreground: 210 80% 95%; /* Soft white for text */
+  
+    --card: 220 50% 16%; /* Slightly lighter navy for cards */
+    --card-foreground: 210 80% 95%; /* Soft white for card text */
+  
+    --popover: 220 50% 12%;
+    --popover-foreground: 210 80% 95%; /* White text on popovers */
+  
+    --primary: 160 100% 40%; /* Vibrant aurora green */
+    --primary-foreground: 210 80% 95%; /* Soft white for primary text */
+  
+    --secondary: 280 60% 50%; /* Soft purple */
+    --secondary-foreground: 210 80% 95%; /* Soft white for secondary text */
+  
+    --muted: 230 20% 30%; /* Muted, deep blue for background elements */
+    --muted-foreground: 210 80% 80%; /* Light gray for muted text */
+  
+    --accent: 180 90% 60%; /* Electric cyan for accents */
+    --accent-foreground: 220 50% 12%; /* Dark background for accent text */
+  
+    --destructive: 0 70% 50%; /* Bright red for destructive actions */
+    --destructive-foreground: 210 80% 95%; /* Soft white for destructive text */
+  
+    --border: 210 30% 20%; /* Muted blue for borders */
+    --input: 220 50% 14%; /* Dark navy for input fields */
+    --ring: 160 100% 40%; /* Aurora green for focus ring */
+  
+    --radius: 0.4rem; /* Subtle roundness for smoothness */
+  
+    --font-family: var(--font-orbitron); /* Use Orbitron font for futuristic look */
+    
+    /* Apply special styles to headers for the theme */
+    h1, h2, h3, h4, h5, h6 {
+      color: hsl(160, 100%, 40%); /* Aurora green for headings */
+      text-shadow: 
+        0 0 8px rgba(0, 255, 100, 0.8), 
+        0 0 12px rgba(0, 255, 100, 0.5); /* Glowing green text shadow */
+    }
+  
+    /* Special effect for links */
+    a {
+      color: hsl(180, 90%, 60%); /* Electric cyan for links */
+      text-decoration: none;
+      transition: color 0.3s ease;
+    }
+  
+    a:hover {
+      color: hsl(280, 60%, 50%); /* Soft purple on hover */
+    }
+  }
+  
   [data-theme="light-solarized"] {
     --background: 45 88% 96%;
     --foreground: 192 15% 32%;
@@ -314,8 +377,6 @@
     --ring: 180 90% 50%; 
     
     --radius: 0.3rem; 
-
-    --font-family: monospace; 
   
     h1, h2, h3, h4, h5, h6 {
       color: hsl(340, 90%, 60%);
@@ -324,6 +385,11 @@
         0 0 8px rgba(255, 20, 147, 0.3), 
         0 0 12px rgba(255, 20, 147, 0.2); 
     }
+  }
+
+  [data-theme="cyberpunk"] * {
+    font-family: var(--font-orbitron, monospace) !important;
+    transition: font-family 0.3s ease-in-out;
   }
 
   [data-theme="pastel"] {
@@ -390,10 +456,114 @@
     --radius: 0.5rem; /* Rounded corners */
   }
   
-  * {
-    @apply border-border;
-    @apply transition-colors duration-300 ease-in-out;
-    font-family: var(--font-family);
+  [data-theme="vintage"] {
+    --background: 40 40% 94%; /* Warm beige */
+    --foreground: 20 20% 20%; /* Dark brown for text */
+    
+    --card: 40 40% 90%; /* Lighter beige for cards */
+    --card-foreground: 20 20% 20%; /* Dark brown for card text */
+    
+    --popover: 40 40% 94%;
+    --popover-foreground: 20 20% 20%;
+    
+    --primary: 30 80% 60%; /* Rich orange */
+    --primary-foreground: 40 40% 94%; /* Beige for primary text */
+    
+    --secondary: 50 40% 80%; /* Muted gold */
+    --secondary-foreground: 20 20% 20%; /* Dark brown for secondary text */
+    
+    --muted: 50 40% 80%; /* Muted gold */
+    --muted-foreground: 20 20% 50%; /* Dark brown for muted text */
+    
+    --accent: 10 70% 60%; /* Soft red */
+    --accent-foreground: 40 40% 94%;
+    
+    --destructive: 0 60% 50%; /* Bright red */
+    --destructive-foreground: 40 40% 94%;
+    
+    --border: 20 20% 80%; /* Soft brown for borders */
+    --input: 40 40% 94%; /* Light beige for input fields */
+    --ring: 30 80% 60%; /* Rich orange for focus ring */
+    
+    --radius: 0.3rem; /* Rounded but less soft */
+    --font-family: 'Georgia', serif; /* Classic serif font */
+  }
+
+  [data-theme="vaporwave"] {
+    --background: 270 40% 10%; /* Deep purple */
+    --foreground: 300 90% 70%; /* Neon pink for text */
+    
+    --card: 270 30% 15%; /* Darker purple for cards */
+    --card-foreground: 300 90% 70%; /* Neon pink for card text */
+    
+    --popover: 270 40% 10%;
+    --popover-foreground: 300 90% 70%;
+    
+    --primary: 200 80% 50%; /* Neon cyan */
+    --primary-foreground: 270 40% 10%; /* Purple for primary text */
+    
+    --secondary: 320 100% 60%; /* Hot magenta */
+    --secondary-foreground: 270 40% 10%;
+    
+    --muted: 240 50% 40%; /* Muted blue */
+    --muted-foreground: 200 100% 70%; /* Bright cyan for muted text */
+    
+    --accent: 340 100% 60%; /* Neon red */
+    --accent-foreground: 270 40% 10%;
+    
+    --destructive: 0 100% 50%; /* Bright red */
+    --destructive-foreground: 270 40% 10%;
+    
+    --border: 300 90% 70%; /* Neon pink for borders */
+    --input: 270 30% 20%; 
+    --ring: 200 80% 50%; /* Neon cyan focus ring */
+    
+    --radius: 0.3rem; /* Subtle roundness */  
+  }
+
+  [data-theme="vaporwave"] * {
+    font-family: var(--font-press-start-2p, monospace) !important;
+    transition: font-family 0.3s ease-in-out;
+  }
+
+  [data-theme="hacker"] {
+    --background: 0 0% 10%; /* Dark black background */
+    --foreground: 120 100% 40%; /* Bright neon green for text */
+    
+    --card: 0 0% 12%; /* Darker gray for cards */
+    --card-foreground: 120 100% 40%; /* Neon green for card text */
+    
+    --popover: 0 0% 10%;
+    --popover-foreground: 120 100% 40%;
+    
+    --primary: 120 100% 30%; /* Matrix green */
+    --primary-foreground: 0 0% 10%; /* Black for primary text */
+    
+    --secondary: 180 100% 30%; /* Cyan for secondary elements */
+    --secondary-foreground: 0 0% 10%; /* Black */
+    
+    --muted: 120 60% 20%; /* Muted green */
+    --muted-foreground: 180 100% 60%; /* Light cyan for muted text */
+    
+    --accent: 300 100% 50%; /* Purple for highlights */
+    --accent-foreground: 0 0% 10%;
+    
+    --destructive: 0 100% 50%; /* Bright red for destructive actions */
+    --destructive-foreground: 0 0% 10%;
+    
+    --border: 120 100% 30%; /* Neon green for borders */
+    --input: 0 0% 15%; /* Dark gray for input fields */
+    --ring: 120 100% 30%; /* Neon green for focus ring */
+    
+    --radius: 0.2rem; /* Subtle rounded corners */
+    --font-family: 'Courier New', monospace; 
+  }
+
+  
+  /* Monospace adjustments for the hacker theme */
+  [data-theme="hacker"] * {
+    font-family: 'Courier New', monospace !important;
+    transition: font-family 0.3s ease-in-out;
   }
 
   body {

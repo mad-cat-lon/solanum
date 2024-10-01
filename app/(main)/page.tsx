@@ -266,7 +266,7 @@ export default function Component() {
         </CardHeader>
         <CardContent>
           <div className="flex flex-col items-center space-y-8">
-            <div className="text-9xl font-bold tabular-nums">{formatTime(time)}</div>
+            <div className="text-9xl font-bold tabular-nums" style={{ fontSize: 'clamp(4rem, 10vw, 8rem)' }}>{formatTime(time)}</div>
             <div className="text-3xl font-semibold">{currentActivity}</div>
             <div className="flex flex-wrap justify-center gap-4">
               <Button onClick={() => startTimer(settings?.defaultTimeLength || 25, currentActivity)} className="bg-red-600 hover:bg-red-700 text-white text-xl py-6 px-8">
@@ -297,7 +297,7 @@ export default function Component() {
                     onFocus={() => setIsCommandOpen(true)}
                     onBlur={() => setIsCommandOpen(false)}
                     className="py-3 pl-4 pr-20 w-full bg-transparent border-2 border-gray-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 rounded-md caret-black transition-all duration-150 ease-in-out"
-                    placeholder="enter activity category"
+                    placeholder="enter category"
                     style={{ caretColor: 'black', fontSize: '1rem'}}
                   />
                   {suggestion && suggestion !== currentActivity && (
