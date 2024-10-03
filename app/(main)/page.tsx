@@ -9,13 +9,15 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip"
+
 import { toast } from "@/components/ui/use-toast"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Command, CommandInput, CommandList, CommandEmpty, CommandItem } from "@/components/ui/command"
 import { ResetIcon, ActivityLogIcon, GearIcon } from '@radix-ui/react-icons'
 import { collection, addDoc, query, getDocs, getDoc, setDoc, doc } from 'firebase/firestore';
 import { useFirestore, useUser } from 'reactfire';
-import { useRouter } from 'next/navigation'
+import { StatsModal } from '@/components/stats-modal';
+import { SettingsModal } from '@/components/settings-modal';
 
 interface Settings {
   longBreak: number;
@@ -55,9 +57,15 @@ export default function Component() {
   const audioRef = useRef<HTMLAudioElement | null>(null)
   const inputRef = useRef<HTMLInputElement>(null)
   const [settings, setSettings] = useState<Settings | null>(null) // Track user settings
-  const router = useRouter()
   const firestore = useFirestore()
   const { data: user } = useUser()
+
+  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+  const [isStatsOpen, setIsStatsOpen] = useState(false);
+
+  // Toggle functions
+  const toggleSettingsModal = () => setIsSettingsOpen(!isSettingsOpen);
+  const toggleStatsModal = () => setIsStatsOpen(!isStatsOpen);
 
   useEffect(() => {
     const fetchSettings = async () => {
@@ -335,7 +343,7 @@ export default function Component() {
                 <TooltipProvider>
                   <Tooltip>
                     <TooltipTrigger asChild>
-                      <Button onClick={() => router.push('/stats')} variant="outline">
+                      <Button onClick={toggleStatsModal} variant="outline">
                         <ActivityLogIcon className="h-6 w-6" />
                       </Button>
                     </TooltipTrigger>
@@ -347,7 +355,7 @@ export default function Component() {
                 <TooltipProvider>
                   <Tooltip>
                     <TooltipTrigger asChild>
-                      <Button onClick={() => router.push('/settings')} variant="outline">
+                      <Button onClick={toggleSettingsModal} variant="outline">
                         <GearIcon className="h-6 w-6" />
                       </Button>
                     </TooltipTrigger>
@@ -359,6 +367,8 @@ export default function Component() {
               </div>
             </div>
           </div>
+          <StatsModal isOpen={isStatsOpen} onClose={toggleStatsModal}/>
+          <SettingsModal isOpen={isSettingsOpen} onClose={toggleSettingsModal}/>
         </CardContent>
       </Card>
     </div>
