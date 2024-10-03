@@ -176,14 +176,11 @@ function SettingsModal({ isOpen, onClose }: { isOpen: boolean, onClose: () => vo
 
   return (
   <Dialog open={isOpen} onOpenChange={onClose}>
-    <DialogContent className="p-4 sm:p-6 max-w-5xl">
+    <DialogContent className="p-4 sm:p-6 max-w-full max-h-full md:max-w-3xl lg:max-w-5xl overflow-auto">
       <DialogHeader>
-        <DialogTitle>Settings</DialogTitle>
+        <DialogTitle>settings</DialogTitle>
       </DialogHeader>   
       <Card className="w-full max-w-3xl mx-auto">
-        <CardHeader>
-        <CardTitle className="text-2xl font-bold text-center">settings</CardTitle>
-        </CardHeader>
         <CardContent>
           <div className="flex flex-col space-y-6">
             <div>

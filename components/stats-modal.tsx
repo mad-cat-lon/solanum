@@ -8,9 +8,9 @@ import ActivitySummary from "@/components/demo-dashboard/activity-summary";
 function StatsModal({ isOpen, onClose }: { isOpen: boolean, onClose: () => void }) {
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="p-4 sm:p-6 max-w-5xl">
+      <DialogContent className="p-4 sm:p-6 max-w-full max-h-full md:max-w-3xl lg:max-w-5xl overflow-auto">
         <DialogHeader>
-          <DialogTitle>Stats</DialogTitle>
+          <DialogTitle>stats</DialogTitle>
         </DialogHeader>
 
         <ActivityProvider>

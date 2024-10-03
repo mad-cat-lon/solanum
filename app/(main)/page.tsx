@@ -68,6 +68,21 @@ export default function Component() {
   const toggleStatsModal = () => setIsStatsOpen(!isStatsOpen);
 
   useEffect(() => {
+    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+      if (isActive) {
+        e.preventDefault();
+        e.returnValue = ''; 
+      }
+    };
+
+    window.addEventListener('beforeunload', handleBeforeUnload);
+
+    return () => {
+      window.removeEventListener('beforeunload', handleBeforeUnload);
+    };
+  }, [isActive]);
+
+  useEffect(() => {
     const fetchSettings = async () => {
       if (user) {
         // Fetch settings from Firebase for logged-in users
