@@ -8,14 +8,9 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '@/components/ui/select';
 import { format, startOfWeek, subDays, subMonths, subYears } from 'date-fns';
 import { DatePicker } from '@/components/ui/date-picker'; 
-import { useActivityData } from '@/components/demo-dashboard/activity-provider';
+import { useActivityData } from '@/components/activity-provider';
 import { useTheme } from "next-themes";
-
-// Define the shape of an activity document
-interface Activity {
-  type: string;
-  timestamp: Timestamp; // Firestore timestamp
-}
+import { Activity } from "@/types/common";
 
 // Define the shape of the chart data
 interface ChartData {
@@ -25,10 +20,10 @@ interface ChartData {
 
 export const ActivityGraph: React.FC = () => {
   const [chartData, setChartData] = useState<ChartData[]>([]);
-  const [taskTypes, setTaskTypes] = useState<string[]>([]); // To store unique task types dynamically
+  const [activityCategories, setActivityCategories] = useState<string[]>([]); // To store unique task types dynamically
   const [maxValue, setMaxValue] = useState<number>(0); // To store max value
   const [selectedCategory, setSelectedCategory] = useState<string>('All'); // For category filter
-  const [totalCount, setTotalCount] = useState<number>(0);// for the total number of time spent
+  const [totalTaskCount, setTotalTaskCount] = useState<number>(0);// for the total number of time spent
   const [viewType, setViewType] = useState<'lineChart' | 'stackedBarChart' | 'cumulative'>('lineChart');
 
   const { theme } = useTheme(); // Access current theme
@@ -47,7 +42,7 @@ export const ActivityGraph: React.FC = () => {
     start: undefined,
     end: undefined,
   });
-  const { activities, loading, categoryColors } = useActivityData();
+  const { activities, tasks, settings, loading, categoryColors } = useActivityData();
   
   useEffect(() => {
     if (!loading && activities.length > 0) {
@@ -62,7 +57,7 @@ export const ActivityGraph: React.FC = () => {
       });
   
       const processActivityData = (activities: Activity[]): ChartData[] => {
-        const taskData: Record<string, Record<string, number | string>> = {}; // Store task counts by date/hour and type
+        const activityData: Record<string, Record<string, number | string>> = {}; // Store task counts by date/hour and type
         const taskTypesSet = new Set<string>();
         let globalMaxValue = 0; // Track global max value
   
@@ -127,13 +122,13 @@ export const ActivityGraph: React.FC = () => {
             ? format(date, 'HH') // Format by hour for today's range
             : format(date, 'yyyy-MM-dd'); // Format by day otherwise
   
-          if (!taskData[formattedDate]) {
-            taskData[formattedDate] = { date: formattedDate };
+          if (!activityData[formattedDate]) {
+            activityData[formattedDate] = { date: formattedDate };
           }
   
           // Increment the task count
-          taskData[formattedDate][type] = (taskData[formattedDate][type] || 0) as number + 1;
-          globalMaxValue = Math.max(globalMaxValue, taskData[formattedDate][type] as number);
+          activityData[formattedDate][type] = (activityData[formattedDate][type] || 0) as number + 1;
+          globalMaxValue = Math.max(globalMaxValue, activityData[formattedDate][type] as number);
         });
   
         //  autofill missing tasks with zero
@@ -142,14 +137,14 @@ export const ActivityGraph: React.FC = () => {
   
           // For each task type, ensure it exists for the current date/hour, defaulting to zero
           taskTypesSet.forEach(type => {
-            dayData[type] = (taskData[date]?.[type] || 0) as number; // Use '0' for missing types
+            dayData[type] = (activityData[date]?.[type] || 0) as number; // Use '0' for missing types
           });
   
           return dayData;
         });
   
         // Set unique task types to state to create lines dynamically
-        setTaskTypes(Array.from(taskTypesSet));
+        setActivityCategories(Array.from(taskTypesSet));
   
         // Set the max value to state
         setMaxValue(globalMaxValue);
@@ -160,14 +155,14 @@ export const ActivityGraph: React.FC = () => {
       setChartData(processActivityData(filteredActivities));
 
     }
-  }, [activities, selectedRange, customDateRange]);
+  }, [activities, selectedRange, customDateRange, loading]);
 
   useEffect(() => {
     if (chartData.length > 0) {
       const totalTaskCount = chartData.reduce((total, data) => {
         if (selectedCategory === 'All') {
           // Filter out "Short Break" and "Long Break" and then calculate the total
-          return total + taskTypes
+          return total + activityCategories
             .filter((type) => type !== 'Short Break' && type !== 'Long Break')
             .reduce((sum, type) => sum + (data[type] as number), 0);
         }
@@ -176,9 +171,9 @@ export const ActivityGraph: React.FC = () => {
           ? (data[selectedCategory] as number || 0) 
           : 0);
       }, 0);
-      setTotalCount(totalTaskCount);
+      setTotalTaskCount(totalTaskCount);
     }
-  }, [chartData, selectedCategory, taskTypes]);
+  }, [chartData, selectedCategory, activityCategories]);
 
   const generateRandomHexColor = () => {
     // Generate red, green, and blue components between 0 and 255
@@ -245,7 +240,7 @@ export const ActivityGraph: React.FC = () => {
           <AreaChart data={filteredChartData}>
             <defs>
             {selectedCategory === 'All'
-              ? taskTypes.map((taskType, index) => (
+              ? activityCategories.map((taskType, index) => (
                   <linearGradient key={taskType} id={`color${index}`} x1="0" y1="0" x2="0" y2="1">
                     <stop offset="5%" stopColor={getColorForTaskType(taskType)} stopOpacity={0.8} />
                     <stop offset="95%" stopColor={getColorForTaskType(taskType)} stopOpacity={0} />
@@ -270,7 +265,7 @@ export const ActivityGraph: React.FC = () => {
             />
             <Legend />
             {selectedCategory === 'All' ? (
-              taskTypes.map((taskType, index) => (
+              activityCategories.map((taskType, index) => (
                 <Area
                   key={taskType}
                   type="monotone"
@@ -305,7 +300,7 @@ export const ActivityGraph: React.FC = () => {
               contentStyle={tooltipStyles}
             />
             <Legend />
-            {taskTypes.map((taskType, index) => (
+            {activityCategories.map((taskType, index) => (
               <Bar key={taskType} dataKey={taskType} stackId="a" fill={getColorForTaskType(taskType)} />
             ))}
           </BarChart>
@@ -315,7 +310,7 @@ export const ActivityGraph: React.FC = () => {
         const cumulativeData = chartData.reduce((acc, data, index) => {
           const prev = acc[index - 1] || {};
           const current: ChartData = { date: data.date };
-          taskTypes.forEach((taskType) => {
+          activityCategories.forEach((taskType) => {
             current[taskType] = (prev[taskType] as number || 0) + (data[taskType] as number || 0);
           });
           acc.push(current);
@@ -333,7 +328,7 @@ export const ActivityGraph: React.FC = () => {
               contentStyle={tooltipStyles}
             />
             <Legend />
-            {taskTypes.map((taskType, index) => (
+            {activityCategories.map((taskType, index) => (
               <Line key={taskType} dataKey={taskType} stroke={getColorForTaskType(taskType)} />
             ))}
           </LineChart>
@@ -343,10 +338,17 @@ export const ActivityGraph: React.FC = () => {
     }
   };
 
+  const calculateTotalTaskTime = () => {
+    const totalMinutes = totalTaskCount * (settings.defaultTimeLength as number);
+    const hours = Math.floor(totalMinutes / 60);
+    const minutes = totalMinutes % 60;
+    return `${hours} hours and ${minutes} minutes`
+  }
+
   return (
     <Card>
       <CardHeader>
-        <CardTitle>You locked in {totalCount} times.</CardTitle>
+        <CardTitle>You locked in {totalTaskCount} times for a total of {calculateTotalTaskTime()}.</CardTitle>
         <CardDescription>
           Task counts per date, categorized by task type
         </CardDescription>
@@ -391,7 +393,7 @@ export const ActivityGraph: React.FC = () => {
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="All">All Categories</SelectItem>
-            {taskTypes.map((type) => (
+            {activityCategories.map((type) => (
               <SelectItem key={type} value={type}>{type}</SelectItem>
             ))}
           </SelectContent>

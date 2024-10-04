@@ -1,52 +1,33 @@
 'use client'
 
-import { useState, useEffect, useRef } from 'react'
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
+import { useState, useEffect, useRef } from 'react';
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import {
   Tooltip,
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
-} from "@/components/ui/tooltip"
+} from "@/components/ui/tooltip";
+import { Skeleton } from "@/components/ui/skeleton";
 
-import { toast } from "@/components/ui/use-toast"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Activity, Settings, defaultCategories, defaultSettings } from "@/types/common";
+import { toast } from "@/components/ui/use-toast";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Command, CommandInput, CommandList, CommandEmpty, CommandItem } from "@/components/ui/command"
 import { ResetIcon, ActivityLogIcon, GearIcon } from '@radix-ui/react-icons'
-import { collection, addDoc, query, getDocs, getDoc, setDoc, doc } from 'firebase/firestore';
+import { collection, addDoc, query, getDocs, getDoc, setDoc, doc, Timestamp} from 'firebase/firestore';
 import { useFirestore, useUser } from 'reactfire';
 import { StatsModal } from '@/components/stats-modal';
 import { SettingsModal } from '@/components/settings-modal';
 
-interface Settings {
-  longBreak: number;
-  shortBreak: number;
-  defaultTimeLength: number;
-  activityCategories: {
-    name: string;
-    color: string;
-  }[];
-}
-
-const defaultCategories = [
-  {
-    name: 'Work',
-    color: '#000000'
-  },
-  {
-    name: 'Long Break',
-    color: '#00FFFF'
-  },
-  {
-    name: 'Short Break',
-    color: '#89CFF0'
-  }
-]
 
 export default function Component() {
+  const firestore = useFirestore()
+  const { data: user } = useUser()
   const [time, setTime] = useState(25 * 60)
   const [isActive, setIsActive] = useState(false)
+  const [activities, setActivities] = useState<Activity[]>([]);
   const [currentActivity, setCurrentActivity] = useState('')
   const [categories, setCategories] = useState<string[]>([])
   const [filteredCategories, setFilteredCategories] = useState<string[]>([])
@@ -56,16 +37,14 @@ export default function Component() {
   const hasAlerted = useRef(false)
   const audioRef = useRef<HTMLAudioElement | null>(null)
   const inputRef = useRef<HTMLInputElement>(null)
-  const [settings, setSettings] = useState<Settings | null>(null) // Track user settings
-  const firestore = useFirestore()
-  const { data: user } = useUser()
+  const [settings, setSettings] = useState<Settings>(defaultSettings) // Track user settings
+  const [loading, setLoading] = useState(true)
 
-  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
-  const [isStatsOpen, setIsStatsOpen] = useState(false);
 
-  // Toggle functions
-  const toggleSettingsModal = () => setIsSettingsOpen(!isSettingsOpen);
-  const toggleStatsModal = () => setIsStatsOpen(!isStatsOpen);
+  const [modals, setModals] = useState({ settings: false, stats: false });
+  const toggleModal = (modalName: 'settings' | 'stats') => {
+    setModals(prev => ({ ...prev, [modalName]: !prev[modalName] }));
+  };
 
   useEffect(() => {
     const handleBeforeUnload = (e: BeforeUnloadEvent) => {
@@ -82,60 +61,84 @@ export default function Component() {
     };
   }, [isActive]);
 
+  // Callback handler for updating settings
+  const handleSettingsUpdate = (updatedSettings: Settings) => {
+    setSettings(updatedSettings);
+    const updatedCategories = updatedSettings.activityCategories.map(category => category.name);
+    setCategories(updatedCategories);
+    setFilteredCategories(updatedCategories); 
+  };
+
   useEffect(() => {
-    const fetchSettings = async () => {
+    const getOrSetLocalSettings = (newLocalSettings: Settings | null) => {
+      if (newLocalSettings === null) {
+        const localSettings = localStorage.getItem('settings');
+        // console.log('Checking for local settings doc')
+        if (localSettings) {
+          // console.log('Retrieving from local settings')
+          const parsedSettings = JSON.parse(localSettings) as Partial<Settings>;
+          // Merge local settings with default settings
+          const mergedSettings: Settings = {
+            ...defaultSettings, // Start with defaults
+            ...parsedSettings, // Override with local storage settings
+            activityCategories: parsedSettings.activityCategories 
+              ? parsedSettings.activityCategories 
+              : defaultSettings.activityCategories
+          };
+          setSettings(mergedSettings);
+          setCategories(mergedSettings.activityCategories.map(category => category.name));
+          setFilteredCategories(mergedSettings.activityCategories.map(category => category.name));
+          setTime(mergedSettings.defaultTimeLength * 60);
+
+        } else {
+          // console.log('Falling back to default local settings')
+          setSettings(defaultSettings);
+          // Fallback to default settings if no localSettings are found
+          setTime(25 * 60);
+          setCategories(defaultCategories.map(category => category.name));
+          setFilteredCategories(defaultCategories.map(category => category.name));
+        }
+      } else {
+        localStorage.setItem('settings', JSON.stringify(newLocalSettings));
+      }
+    }
+    const fetchUserData = async () => {
       if (user) {
         // Fetch settings from Firebase for logged-in users
         const userRef = doc(firestore, `users/${user.uid}`);
         const settingsDoc = await getDoc(userRef);
   
         if (settingsDoc.exists()) {
+          // console.log('Settings doc exists');
           const fetchedSettings = settingsDoc.data().settings as Settings || {};
-          const defaultSettings: Settings = {
-            longBreak: fetchedSettings.longBreak ?? 15,
-            shortBreak: fetchedSettings.shortBreak ?? 10,
-            defaultTimeLength: fetchedSettings.defaultTimeLength ?? 25,
-            activityCategories: fetchedSettings.activityCategories ?? defaultCategories
-          };
-          setSettings(defaultSettings);
+          setSettings(fetchedSettings);
+          // Save it in local
+          getOrSetLocalSettings(fetchedSettings);
+          setCategories(fetchedSettings.activityCategories.map(category => category.name));
+          setFilteredCategories(fetchedSettings.activityCategories.map(category => category.name));
+          setTime(fetchedSettings.defaultTimeLength * 60);
+        } else {
+          // console.log('No settings, falling back to default')
+          getOrSetLocalSettings(null);
+          // If no settings document exists, fallback to default settings
           setCategories(defaultSettings.activityCategories.map(category => category.name));
           setFilteredCategories(defaultSettings.activityCategories.map(category => category.name));
           setTime(defaultSettings.defaultTimeLength * 60);
-        } else {
-          // Fallback to default settings
-          setSettings({
-            longBreak: 15,
-            shortBreak: 5,
-            defaultTimeLength: 25,
-            activityCategories: defaultCategories
-          });
-          setTime(25 * 60);
         }
+
+        // Fetch user activities from Firestore
+        const activitiesRef = collection(firestore, `users/${user.uid}/activity`);
+        const activitiesSnapshot = await getDocs(activitiesRef);
+        const fetchedActivities = activitiesSnapshot.docs.map(doc => doc.data() as Activity);
+        setActivities(fetchedActivities);
+
       } else {
-        // Load settings from localStorage for logged-out users
-        const localSettings = localStorage.getItem('settings');
-        if (localSettings) {
-          const parsedSettings = JSON.parse(localSettings) as Settings;
-          setSettings(parsedSettings);
-          setCategories(parsedSettings.activityCategories.map(category => category.name));
-          setFilteredCategories(parsedSettings.activityCategories.map(category => category.name));
-          setTime(parsedSettings.defaultTimeLength * 60);
-        } else {
-          // Fallback to default settings if no localSettings are found
-          setSettings({
-            longBreak: 15,
-            shortBreak: 5,
-            defaultTimeLength: 25,
-            activityCategories: defaultCategories
-          });
-          setTime(25 * 60);
-          setCategories(defaultCategories.map(category => category.name))
-          setFilteredCategories(defaultCategories.map(category => category.name))
-        }
+        getOrSetLocalSettings(null);
       }
+      setLoading(false); 
     };
   
-    fetchSettings();
+    fetchUserData();
   }, [firestore, user]);
 
   useEffect(() => {
@@ -162,6 +165,7 @@ export default function Component() {
     return () => {
       if (timerRef.current) {
         clearInterval(timerRef.current)
+        timerRef.current = null
       }
     }
   }, [isActive, time, currentActivity])
@@ -281,6 +285,29 @@ export default function Component() {
     inputRef.current?.focus();
   };
 
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center p-4">
+        <Card className="w-full max-w-3xl mx-auto">
+          <CardContent>
+            <div className="flex flex-col items-center space-y-8 p-4">
+              <Skeleton className="w-72 h-24" /> 
+              
+              <Skeleton className="w-40 h-8" />
+
+              <div className="flex flex-wrap justify-center gap-4">
+                <Skeleton className="w-40 h-14" />
+                <Skeleton className="w-40 h-14" />
+                <Skeleton className="w-40 h-14" />
+                <Skeleton className="w-40 h-14" />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen flex items-center justify-center p-4">
       <Card className="w-full max-w-3xl mx-auto">
@@ -358,7 +385,7 @@ export default function Component() {
                 <TooltipProvider>
                   <Tooltip>
                     <TooltipTrigger asChild>
-                      <Button onClick={toggleStatsModal} variant="outline">
+                      <Button onClick={() => {toggleModal('stats')}} variant="outline">
                         <ActivityLogIcon className="h-6 w-6" />
                       </Button>
                     </TooltipTrigger>
@@ -370,7 +397,7 @@ export default function Component() {
                 <TooltipProvider>
                   <Tooltip>
                     <TooltipTrigger asChild>
-                      <Button onClick={toggleSettingsModal} variant="outline">
+                      <Button onClick={() => {toggleModal('settings')}} variant="outline">
                         <GearIcon className="h-6 w-6" />
                       </Button>
                     </TooltipTrigger>
@@ -382,8 +409,8 @@ export default function Component() {
               </div>
             </div>
           </div>
-          <StatsModal isOpen={isStatsOpen} onClose={toggleStatsModal}/>
-          <SettingsModal isOpen={isSettingsOpen} onClose={toggleSettingsModal}/>
+          <StatsModal isOpen={modals.stats} onClose={() => {toggleModal('stats')}} activities={activities} settings={settings}/>
+          <SettingsModal isOpen={modals.settings} onClose={() => {toggleModal('settings')}} onSave={handleSettingsUpdate} settings={settings}/>
         </CardContent>
       </Card>
     </div>

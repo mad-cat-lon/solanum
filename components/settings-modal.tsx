@@ -1,25 +1,17 @@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
-import { useState, useEffect } from 'react'
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { useFirestore, useUser } from 'reactfire'
-import { doc, getDoc, setDoc, collection, getDocs } from 'firebase/firestore'
-import { toast } from "@/components/ui/use-toast"
-import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover"
-import { HexColorPicker } from "react-colorful"
+import { useState, useEffect } from 'react';
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { useFirestore, useUser } from 'reactfire';
+import { doc, getDoc, setDoc, collection, getDocs } from 'firebase/firestore';
+import { toast } from "@/components/ui/use-toast";
+import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover";
+import { HexColorPicker } from "react-colorful";
 
+import { Activity, Settings, defaultCategories, defaultSettings } from "@/types/common";
 
-interface Settings {
-  longBreak: number;
-  shortBreak: number;
-  defaultTimeLength: number;
-  activityCategories: {
-  name: string;
-  color: string;
-  }[];
-}
 
 const generateRandomHexColor = () => {
   const red = Math.floor(Math.random() * 256);
@@ -31,148 +23,75 @@ const generateRandomHexColor = () => {
   return `#${redHex}${greenHex}${blueHex}`;
   }
   
-function SettingsModal({ isOpen, onClose }: { isOpen: boolean, onClose: () => void }) {
+function SettingsModal({ isOpen, onClose, onSave, settings }: { isOpen: boolean, onClose: () => void, onSave: (updatedSettings: Settings) => void, settings: Settings }) {
   const { data: user } = useUser();
   const firestore = useFirestore();
 
-  const defaultSettings: Settings = {
-  longBreak: 15,
-  shortBreak: 10,
-  defaultTimeLength: 25,
-  activityCategories: []
-  };
-
-  const [settings, setSettings] = useState<Settings>(defaultSettings);
-  const [taskCategories, setTaskCategories] = useState<Settings['activityCategories']>([]);
+  const [currSettings, setCurrSettings] = useState<Settings>(settings);
+  const [activityCategories, setActivityCategories] = useState<Settings['activityCategories']>(currSettings.activityCategories);
   const [colorPickerOpen, setColorPickerOpen] = useState<number | null>(null);
-  useEffect(() => {
-  const fetchData = async () => {
-    if (user) {
-    const userRef = doc(firestore, `users/${user.uid}`);
-  
-    // Check if there are any local settings in localStorage
-    const localSettings = localStorage.getItem('settings');
-    let parsedLocalSettings: Partial<Settings> | null = null;
-  
-    if (localSettings) {
-      parsedLocalSettings = JSON.parse(localSettings) as Partial<Settings>;
-    }
-  
-    // Fetch settings from Firebase for logged-in users
-    const settingsDoc = await getDoc(userRef);
-    let firebaseSettings: Partial<Settings> = {};
-    if (settingsDoc.exists()) {
-      firebaseSettings = settingsDoc.data().settings as Partial<Settings>;
-    }
-  
-    // Merge local settings and Firebase settings
-    const mergedSettings: Settings = {
-      longBreak: parsedLocalSettings?.longBreak ?? firebaseSettings?.longBreak ?? defaultSettings.longBreak,
-      shortBreak: parsedLocalSettings?.shortBreak ?? firebaseSettings?.shortBreak ?? defaultSettings.shortBreak,
-      defaultTimeLength: parsedLocalSettings?.defaultTimeLength ?? firebaseSettings?.defaultTimeLength ?? defaultSettings.defaultTimeLength,
-      activityCategories: [
-      // Include all Firebase categories first
-      ...(firebaseSettings.activityCategories ?? defaultSettings.activityCategories),
-  
-      // Add only local categories that don't exist in Firebase
-      ...(parsedLocalSettings?.activityCategories ?? []).filter(
-        localCategory => !firebaseSettings.activityCategories?.some(
-        firebaseCategory => firebaseCategory.name === localCategory.name
-        )
-      )
-      ]
-    };
-  
-    // Save merged settings to Firebase
-    await setDoc(userRef, { settings: mergedSettings }, { merge: true });
-  
-    // Clear localStorage after syncing
-    localStorage.removeItem('settings');
-    toast({ title: "synced local settings with your account!" });
-  
-    // Set the merged settings to the state
-    setSettings(mergedSettings);
-  
-    // Fetch task categories for logged-in users
-    const taskCategoriesRef = collection(firestore, `users/${user.uid}/taskCategories`);
-    const taskCategoriesSnapshot = await getDocs(taskCategoriesRef);
-    const fetchedTaskCategories = taskCategoriesSnapshot.docs.map(doc => ({
-      name: doc.data().name,
-      color: doc.data().color || generateRandomHexColor()
-    }));
-    setTaskCategories(fetchedTaskCategories);
-    } else {
-    // Load settings from localStorage for logged-out users
-    const localSettings = localStorage.getItem('settings');
-    if (localSettings) {
-      setSettings(JSON.parse(localSettings));
-    }
-    }
-  };
-  
-  fetchData();
-  }, [firestore, user]);
 
-  const handleSaveSettings = async () => {
+const handleSaveSettings = async () => {
   if (user) {
     // Save settings to Firebase for logged-in users
     const userRef = doc(firestore, `users/${user.uid}`);
-    await setDoc(userRef, { settings }, { merge: true });
-    toast({ title: "ettings saved!" });
+    await setDoc(userRef, { settings: currSettings }, { merge: true });
+    toast({ title: "settings saved!" });
   } else {
     // Save settings to localStorage for logged-out users
-    localStorage.setItem('settings', JSON.stringify(settings));
+    localStorage.setItem('settings', JSON.stringify(currSettings));
     toast({ title: "settings saved locally!" });
   }
-  };
+  onSave(currSettings);
+};
   
 
   const handleChange = (field: keyof Settings, value: any) => {
-  setSettings({ ...settings, [field]: value });
+  setCurrSettings({ ...currSettings, [field]: value });
   };
 
   const handleCategoryChange = (index: number, field: keyof Settings['activityCategories'][number], value: string) => {
-  const updatedCategories = [...settings.activityCategories];
+  const updatedCategories = [...currSettings.activityCategories];
   updatedCategories[index][field] = value;
-  setSettings({ ...settings, activityCategories: updatedCategories });
+  setCurrSettings({ ...currSettings, activityCategories: updatedCategories });
   };
 
   const handleAddCategory = () => {
-  setSettings({
-    ...settings,
+  setCurrSettings({
+    ...currSettings,
     activityCategories: [
-    ...settings.activityCategories,
+    ...currSettings.activityCategories,
     { name: '', color: generateRandomHexColor() }
     ]
   });
   };
 
   const handleDeleteCategory = (index: number) => {
-  const updatedCategories = [...settings.activityCategories];
+  const updatedCategories = [...currSettings.activityCategories];
   updatedCategories.splice(index, 1);
-  setSettings({ ...settings, activityCategories: updatedCategories });
+  setCurrSettings({ ...currSettings, activityCategories: updatedCategories });
   };
 
   const mergeTaskCategoriesWithSettings = () => {
-  const mergedCategories = [...settings.activityCategories];
+  const mergedCategories = [...currSettings.activityCategories];
 
-  taskCategories.forEach(taskCategory => {
-    if (!mergedCategories.some(category => category.name === taskCategory.name)) {
-    mergedCategories.push(taskCategory);
+  activityCategories.forEach(activityCategory => {
+    if (!mergedCategories.some(category => category.name === activityCategory.name)) {
+    mergedCategories.push(activityCategory);
     }
   });
 
-  setSettings(prevSettings => ({
+  setCurrSettings(prevSettings => ({
     ...prevSettings,
     activityCategories: mergedCategories
   }));
   };
 
   useEffect(() => {
-  if (taskCategories.length > 0) {
+  if (activityCategories.length > 0) {
     mergeTaskCategoriesWithSettings();
   }
-  }, [taskCategories]);
+  }, [activityCategories]);
 
   return (
   <Dialog open={isOpen} onOpenChange={onClose}>
@@ -188,7 +107,7 @@ function SettingsModal({ isOpen, onClose }: { isOpen: boolean, onClose: () => vo
             <Input
                 id="defaultTimeLength"
                 type="number"
-                value={settings.defaultTimeLength}
+                value={currSettings.defaultTimeLength}
                 onChange={(e) => handleChange('defaultTimeLength', e.target.value)}
             />
             </div>
@@ -198,7 +117,7 @@ function SettingsModal({ isOpen, onClose }: { isOpen: boolean, onClose: () => vo
             <Input
                 id="shortBreak"
                 type="number"
-                value={settings.shortBreak}
+                value={currSettings.shortBreak}
                 onChange={(e) => handleChange('shortBreak', e.target.value)}
             />
             </div>
@@ -208,14 +127,14 @@ function SettingsModal({ isOpen, onClose }: { isOpen: boolean, onClose: () => vo
             <Input
                 id="longBreak"
                 type="number"
-                value={settings.longBreak}
+                value={currSettings.longBreak}
                 onChange={(e) => handleChange('longBreak', e.target.value)}
             />
             </div>
 
             <div>
             <Label>activity categories</Label>
-            {settings.activityCategories.map((category, index) => (
+            {currSettings.activityCategories.map((category, index) => (
             <div key={index} className="flex items-center space-x-4 space-y-2">
             <Input
                 type="text"

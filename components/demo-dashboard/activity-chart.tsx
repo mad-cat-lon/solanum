@@ -1,12 +1,14 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { collection, query, getDocs, Firestore, Timestamp } from 'firebase/firestore';
-import { useFirestore, useUser } from 'reactfire';
+import { Timestamp } from 'firebase/firestore';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { format, subDays } from 'date-fns';
-import { useActivityData } from '@/components/demo-dashboard/activity-provider';
+import { useActivityData } from '@/components/activity-provider';
+
+import { Activity, Settings } from "@/types/common";
+
 // Helper function to get color based on activity level
 const getActivityColor = (level: number) => {
   const colors = [
@@ -18,13 +20,6 @@ const getActivityColor = (level: number) => {
   ];
   return colors[level] || colors[0]; // Default to neutral if level is undefined
 };
-
-// Interface for Activity documents from Firestore
-interface Activity {
-  type: string;
-  timestamp: Timestamp;
-}
-
 
 export const ActivityChart: React.FC = () => {
   // const firestore = useFirestore();

@@ -10,16 +10,7 @@ import { doc, getDoc, setDoc, collection, getDocs } from 'firebase/firestore'
 import { toast } from "@/components/ui/use-toast"
 import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover"
 import { HexColorPicker } from "react-colorful" // Install this package
-
-interface Settings {
-  longBreak: number;
-  shortBreak: number;
-  defaultTimeLength: number;
-  activityCategories: {
-    name: string;
-    color: string;
-  }[];
-}
+import { Settings, defaultSettings } from "@/types/common"
 
 const generateRandomHexColor = () => {
   const red = Math.floor(Math.random() * 256);
@@ -34,13 +25,6 @@ const generateRandomHexColor = () => {
 export default function SettingsPage() {
   const { data: user } = useUser();
   const firestore = useFirestore();
-
-  const defaultSettings: Settings = {
-    longBreak: 15,
-    shortBreak: 10,
-    defaultTimeLength: 25,
-    activityCategories: []
-  };
 
   const [settings, setSettings] = useState<Settings>(defaultSettings);
   const [taskCategories, setTaskCategories] = useState<Settings['activityCategories']>([]);
@@ -106,6 +90,9 @@ export default function SettingsPage() {
         const localSettings = localStorage.getItem('settings');
         if (localSettings) {
           setSettings(JSON.parse(localSettings));
+        } else {
+          // Fall back to default 
+          setSettings(defaultSettings)
         }
       }
     };

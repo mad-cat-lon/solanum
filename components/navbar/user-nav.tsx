@@ -25,6 +25,8 @@ export function UserNav() {
       title: "logged out",
       description: "you have been logged out.",
     });
+    // Clear local storage
+    localStorage.removeItem('settings');
     router.replace("/");
   };
 

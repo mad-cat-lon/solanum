@@ -1,5 +1,5 @@
 import React, { useMemo } from 'react';
-import { useActivityData } from '@/components/demo-dashboard/activity-provider';
+import { useActivityData } from '@/components/activity-provider';
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
