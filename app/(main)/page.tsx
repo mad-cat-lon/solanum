@@ -259,16 +259,18 @@ export default function Component() {
     }
   };
 
-  const handleAddNewActivity = async (timerType: string) => {
+  const handleAddNewActivity = async (activity: string) => {
+    const newActivity = {
+      timestamp: Timestamp.fromDate(new Date()),
+      type: activity
+    };
     if (user) {
       // Submit the completed activity to Firestore
       const activityCollectionRef = collection(firestore, `users/${user.uid}/activity`);
-      const newActivity = {
-        timestamp: new Date(),
-        type: timerType
-      };
       await addDoc(activityCollectionRef, newActivity);
     }
+    setActivities(prevActivities => [...prevActivities, newActivity]);
+  
   };
 
 
