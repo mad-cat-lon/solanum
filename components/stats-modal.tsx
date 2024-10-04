@@ -31,7 +31,7 @@ function StatsModal({ isOpen, onClose }: { isOpen: boolean, onClose: () => void 
 
         <DialogFooter className="flex justify-end space-x-4 pt-4">
           <Button onClick={onClose}>
-            Close
+            close
           </Button>
         </DialogFooter>
       </DialogContent>

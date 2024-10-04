@@ -261,7 +261,7 @@ function SettingsModal({ isOpen, onClose }: { isOpen: boolean, onClose: () => vo
       </Card>
       <DialogFooter className="flex justify-end space-x-4 pt-4">
         <Button onClick={onClose}>
-            Close
+            close
         </Button>
       </DialogFooter>
     </DialogContent>
