@@ -18,11 +18,11 @@ function StatsModal({ isOpen, onClose }: { isOpen: boolean, onClose: () => void 
             <div className="flex-1 space-y-4 pt-6">
               <ActivityGraph />
             </div>
-            <div className="flex flex-row space-x-4 pt-6">
+            <div className="flex flex-col space-y-4 pt-6 sm:space-y-0 sm:flex-row sm:space-x-4">
               <div className="flex-1">
                 <ActivityChart />
               </div>
-              <div className="w-1/4">
+              <div className="w-full sm:w-1/4">
                 <ActivitySummary />
               </div>
             </div>
