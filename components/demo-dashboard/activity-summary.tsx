@@ -16,7 +16,7 @@ const startOfWeek = (date: Date) => {
 const startOfMonth = (date: Date) => new Date(date.getFullYear(), date.getMonth(), 1);
 
 const ActivitySummary: React.FC = () => {
-  const { activities, loading } = useActivityData();
+  const { tasks, loading } = useActivityData();
 
   // Calculate daily, weekly, and total activities
   const now = new Date();
@@ -32,17 +32,17 @@ const ActivitySummary: React.FC = () => {
     dailyAvg,
     weeklyAvg,
   } = useMemo(() => {
-    const todayActivities = activities.filter(
+    const todayActivities = tasks.filter(
       (activity) => activity.timestamp && activity.timestamp.toDate() >= todayStart
     );
-    const weeklyActivities = activities.filter(
+    const weeklyActivities = tasks.filter(
       (activity) => activity.timestamp && activity.timestamp.toDate() >= weekStart
     );
-    const monthlyActivities = activities.filter(
+    const monthlyActivities = tasks.filter(
       (activity) => activity.timestamp && activity.timestamp.toDate() >= monthStart
     );
 
-    const totalActivities = activities.length;
+    const totalActivities = tasks.length;
     const daysThisMonth = now.getDate(); // Current day of the month
     const weeksThisMonth = Math.ceil(daysThisMonth / 7);
 
@@ -54,7 +54,7 @@ const ActivitySummary: React.FC = () => {
       dailyAvg: totalActivities / daysThisMonth || 0,
       weeklyAvg: totalActivities / weeksThisMonth || 0,
     };
-  }, [activities, todayStart, weekStart, monthStart, now]);
+  }, [tasks, todayStart, weekStart, monthStart, now]);
 
   if (loading) return <div>Loading...</div>;
 

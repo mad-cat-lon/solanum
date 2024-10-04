@@ -58,7 +58,7 @@ export const ActivityGraph: React.FC = () => {
   
       const processActivityData = (activities: Activity[]): ChartData[] => {
         const activityData: Record<string, Record<string, number | string>> = {}; // Store task counts by date/hour and type
-        const taskTypesSet = new Set<string>();
+        const categoriesSet = new Set<string>();
         let globalMaxValue = 0; // Track global max value
   
         // Get the min and max dates in the activity list
@@ -75,7 +75,7 @@ export const ActivityGraph: React.FC = () => {
           if (!minDate || date < minDate) minDate = date;
           if (!maxDate || date > maxDate) maxDate = date;
   
-          taskTypesSet.add(type);
+          categoriesSet.add(type);
         });
 
         // Ensure minDate and maxDate are not null before proceeding
@@ -136,7 +136,7 @@ export const ActivityGraph: React.FC = () => {
           const dayData: ChartData = { date }; // Initialize each day's or hour's data
   
           // For each task type, ensure it exists for the current date/hour, defaulting to zero
-          taskTypesSet.forEach(type => {
+          categoriesSet.forEach(type => {
             dayData[type] = (activityData[date]?.[type] || 0) as number; // Use '0' for missing types
           });
   
@@ -144,7 +144,7 @@ export const ActivityGraph: React.FC = () => {
         });
   
         // Set unique task types to state to create lines dynamically
-        setActivityCategories(Array.from(taskTypesSet));
+        setActivityCategories(Array.from(categoriesSet));
   
         // Set the max value to state
         setMaxValue(globalMaxValue);
@@ -155,7 +155,7 @@ export const ActivityGraph: React.FC = () => {
       setChartData(processActivityData(filteredActivities));
 
     }
-  }, [activities, selectedRange, customDateRange, loading]);
+  }, [activities, selectedRange, customDateRange, loading, viewType, selectedCategory]);
 
   useEffect(() => {
     if (chartData.length > 0) {
@@ -191,8 +191,8 @@ export const ActivityGraph: React.FC = () => {
   };
 
   // Get or assign a color for a task type
-  const getColorForTaskType = (taskType: string) => {
-    return categoryColors[taskType] || generateRandomHexColor();
+  const getColorForCategory = (category: string) => {
+    return categoryColors[category] || generateRandomHexColor();
   };
 
 
@@ -234,22 +234,23 @@ export const ActivityGraph: React.FC = () => {
 
   // Function to render the chart based on the selected view type
   const renderChart = () => {
+    console.log(categoryColors)
     switch (viewType) {
       case 'lineChart':
         return (
           <AreaChart data={filteredChartData}>
             <defs>
             {selectedCategory === 'All'
-              ? activityCategories.map((taskType, index) => (
-                  <linearGradient key={taskType} id={`color${index}`} x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor={getColorForTaskType(taskType)} stopOpacity={0.8} />
-                    <stop offset="95%" stopColor={getColorForTaskType(taskType)} stopOpacity={0} />
+              ? activityCategories.map((category, index) => (
+                  <linearGradient key={category} id={`color${index}`} x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor={getColorForCategory(category)} stopOpacity={0.8} />
+                    <stop offset="95%" stopColor={getColorForCategory(category)} stopOpacity={0} />
                   </linearGradient>
                 ))
               : 
                 <linearGradient id={`color0`} x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor={getColorForTaskType(selectedCategory)} stopOpacity={0.8} />
-                  <stop offset="95%" stopColor={getColorForTaskType(selectedCategory)} stopOpacity={0} />
+                  <stop offset="5%" stopColor={getColorForCategory(selectedCategory)} stopOpacity={0.8} />
+                  <stop offset="95%" stopColor={getColorForCategory(selectedCategory)} stopOpacity={0} />
                 </linearGradient>
             }
             </defs>
@@ -265,12 +266,12 @@ export const ActivityGraph: React.FC = () => {
             />
             <Legend />
             {selectedCategory === 'All' ? (
-              activityCategories.map((taskType, index) => (
+              activityCategories.map((category, index) => (
                 <Area
-                  key={taskType}
+                  key={category}
                   type="monotone"
-                  dataKey={taskType}
-                  stroke={getColorForTaskType(taskType)} 
+                  dataKey={category}
+                  stroke={getColorForCategory(category)} 
                   fillOpacity={1}
                   fill={`url(#color${index})`}
                 />
@@ -279,7 +280,7 @@ export const ActivityGraph: React.FC = () => {
               <Area
                 type="monotone"
                 dataKey={selectedCategory}
-                stroke={getColorForTaskType(selectedCategory)}
+                stroke={getColorForCategory(selectedCategory)}
                 fillOpacity={1}
                 fill={`url(#color0)`}
               />
@@ -300,9 +301,15 @@ export const ActivityGraph: React.FC = () => {
               contentStyle={tooltipStyles}
             />
             <Legend />
-            {activityCategories.map((taskType, index) => (
-              <Bar key={taskType} dataKey={taskType} stackId="a" fill={getColorForTaskType(taskType)} />
-            ))}
+            {selectedCategory === 'All' ? (
+                activityCategories.map((category, index) => (
+                  <Bar key={category} dataKey={category} stackId="a" fill={getColorForCategory(category)} />
+                ))
+              )
+              : (
+                <Bar dataKey={selectedCategory} fill={getColorForCategory(selectedCategory)}/>
+              )
+            }
           </BarChart>
         );
       case 'cumulative':
@@ -310,8 +317,8 @@ export const ActivityGraph: React.FC = () => {
         const cumulativeData = chartData.reduce((acc, data, index) => {
           const prev = acc[index - 1] || {};
           const current: ChartData = { date: data.date };
-          activityCategories.forEach((taskType) => {
-            current[taskType] = (prev[taskType] as number || 0) + (data[taskType] as number || 0);
+          activityCategories.forEach((category) => {
+            current[category] = (prev[category] as number || 0) + (data[category] as number || 0);
           });
           acc.push(current);
           return acc;
@@ -328,9 +335,15 @@ export const ActivityGraph: React.FC = () => {
               contentStyle={tooltipStyles}
             />
             <Legend />
-            {activityCategories.map((taskType, index) => (
-              <Line key={taskType} dataKey={taskType} stroke={getColorForTaskType(taskType)} />
-            ))}
+            {selectedCategory === 'All' ? (
+                activityCategories.map((category, index) => (
+                  <Line key={category} dataKey={category} stroke={getColorForCategory(category)} />
+                ))
+              )
+              : (
+                <Line dataKey={selectedCategory} stroke={getColorForCategory(selectedCategory)}/>
+              )
+            }
           </LineChart>
         );
       default:

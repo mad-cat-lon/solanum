@@ -24,7 +24,7 @@ const getActivityColor = (level: number) => {
 export const ActivityChart: React.FC = () => {
   // const firestore = useFirestore();
   // const { data: user } = useUser();
-  const { activities, loading } = useActivityData();
+  const { tasks, loading } = useActivityData();
   const [activityMap, setActivityMap] = useState<Record<string, number>>({});
   const [totalCount, setTotalCount] = useState(0);
   const days = 365;
@@ -42,11 +42,11 @@ export const ActivityChart: React.FC = () => {
   };
 
   useEffect(() => {
-    if (!loading && activities.length > 0) {
-      const groupedData = groupActivitiesByDate(activities);
+    if (!loading && tasks.length > 0) {
+      const groupedData = groupActivitiesByDate(tasks);
       setActivityMap(groupedData);
     }
-  }, [activities, loading]);
+  }, [tasks, loading]);
 
   return (
     <Card className="w-full max-w-4xl mx-auto">

@@ -196,7 +196,7 @@ export default function Component() {
     return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`
   }
 
-  const handleTaskCategoryChange = (newCategory: string) => {
+  const handleCategoryChange = (newCategory: string) => {
     setCurrentActivity(newCategory);
     if (newCategory === '') {
       setFilteredCategories(categories);
@@ -344,7 +344,7 @@ export default function Component() {
                     ref={inputRef}
                     value={currentActivity}
                     onClick={handleCategoryInputClick}
-                    onChange={(e) => handleTaskCategoryChange(e.target.value)}
+                    onChange={(e) => handleCategoryChange(e.target.value)}
                     onKeyDown={handleKeyDown}
                     onFocus={() => setIsCommandOpen(true)}
                     onBlur={() => setIsCommandOpen(false)}
