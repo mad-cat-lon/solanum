@@ -156,9 +156,9 @@ export default function Component() {
       if (audioRef.current) {
         audioRef.current.play()
       }
+      handleAddNewActivity(currentActivity)
       alert(`${currentActivity} session completed!`)
       hasAlerted.current = true
-      handleAddNewActivity(currentActivity)
       document.title = `Lock in!`
     }
 
@@ -259,10 +259,11 @@ export default function Component() {
     }
   };
 
-  const handleAddNewActivity = async (activity: string) => {
+  const handleAddNewActivity = async (activityCategory: string) => {
+    // Record default category if none was provided
     const newActivity = {
       timestamp: Timestamp.fromDate(new Date()),
-      type: activity
+      type: activityCategory === '' ? 'Default' : activityCategory
     };
     if (user) {
       // Submit the completed activity to Firestore

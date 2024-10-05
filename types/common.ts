@@ -27,6 +27,10 @@ export const defaultCategories = [
     {
         name: 'Short Break',
         color: '#89CFF0'
+    },
+    {
+        name: 'Default',
+        color: '#000000'
     }
 ]
   
