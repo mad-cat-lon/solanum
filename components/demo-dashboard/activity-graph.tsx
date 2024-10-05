@@ -234,7 +234,6 @@ export const ActivityGraph: React.FC = () => {
 
   // Function to render the chart based on the selected view type
   const renderChart = () => {
-    console.log(categoryColors)
     switch (viewType) {
       case 'lineChart':
         return (
@@ -369,7 +368,6 @@ export const ActivityGraph: React.FC = () => {
       <CardContent>
 
         <div className="flex space-x-4 mb-4">
-          {/* Select for predefined ranges */}
           <Select value={selectedRange} onValueChange={(value) => setSelectedRange(value as 'today' | '7d' | 'week' | '30d' | '120d' | 'year' | 'custom')}>
             <SelectTrigger>
               <SelectValue placeholder="Select Date Range" />
@@ -385,22 +383,22 @@ export const ActivityGraph: React.FC = () => {
             </SelectContent>
           </Select>
 
-          {/* DatePicker for custom range */}
           {selectedRange === 'custom' && (
             <div className="flex space-x-2">
                 <DatePicker
-                label="Start Date"
-                selectedDate={customDateRange.start}
-                onSelect={(date) => setCustomDateRange((prev) => ({...prev, start: date}))}
+                  label="start date"
+                  selectedDate={customDateRange.start}
+                  onSelect={(date) => setCustomDateRange((prev) => ({...prev, start: date}))}
                 />
                 <DatePicker
-                label="End Date"
-                selectedDate={customDateRange.end}
-                onSelect={(date) => setCustomDateRange((prev) => ({...prev, end: date}))}
+                  label="end date"
+                  selectedDate={customDateRange.end}
+                  onSelect={(date) => setCustomDateRange((prev) => ({...prev, end: date}))}
                 />
             </div>
           )}
-          <Select value={selectedCategory} onValueChange={(value) => setSelectedCategory(value)}>
+          
+        <Select value={selectedCategory} onValueChange={(value) => setSelectedCategory(value)}>
           <SelectTrigger>
             <SelectValue placeholder="Select Category" />
           </SelectTrigger>
@@ -411,6 +409,7 @@ export const ActivityGraph: React.FC = () => {
             ))}
           </SelectContent>
         </Select>
+
         <Select value={viewType} onValueChange={(value) => setViewType(value as 'lineChart' | 'stackedBarChart' | 'cumulative')}>
           <SelectTrigger>
             <SelectValue placeholder="Select View" />
@@ -421,6 +420,7 @@ export const ActivityGraph: React.FC = () => {
             <SelectItem value="cumulative">Cumulative Chart</SelectItem>
           </SelectContent>
         </Select>
+
         </div>
         {filteredChartData.length > 0 ? (
           <ResponsiveContainer width="100%" height={400}>

@@ -10,7 +10,7 @@ function StatsModal({ isOpen, onClose, activities, settings }: { isOpen: boolean
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="p-4 sm:p-6 max-w-full max-h-full md:max-w-3xl lg:max-w-5xl overflow-auto">
+      <DialogContent className="p-4 sm:p-6 max-w-full max-h-full md:max-w-3xl lg:max-w-5xl overflow-hidden">
         <DialogHeader>
           <DialogTitle>stats</DialogTitle>
         </DialogHeader>
