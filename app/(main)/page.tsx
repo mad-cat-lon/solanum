@@ -9,8 +9,14 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger
+} from "@/components/ui/dropdown-menu";
 import { Skeleton } from "@/components/ui/skeleton";
-
+import { Switch } from '@/components/ui/switch';
 import { Activity, Settings, defaultCategories, defaultSettings } from "@/types/common";
 import { toast } from "@/components/ui/use-toast";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -21,6 +27,21 @@ import { useFirestore, useUser } from 'reactfire';
 import { StatsModal } from '@/components/stats-modal';
 import { SettingsModal } from '@/components/settings-modal';
 
+const generateRandomHexColor = () => {
+  // Generate red, green, and blue components between 0 and 255
+  const red = Math.floor(Math.random() * 256);
+  const green = Math.floor(Math.random() * 256);
+  const blue = Math.floor(Math.random() * 256);
+
+  // Convert to hexadecimal and pad with zeroes if needed
+  const redHex = red.toString(16).padStart(2, '0');
+  const greenHex = green.toString(16).padStart(2, '0');
+  const blueHex = blue.toString(16).padStart(2, '0');
+
+  // Concatenate into a full hex color string
+  return `#${redHex}${greenHex}${blueHex}`;
+};
+
 
 export default function Component() {
   const firestore = useFirestore()
@@ -28,7 +49,7 @@ export default function Component() {
   const [time, setTime] = useState(25 * 60)
   const [isActive, setIsActive] = useState(false)
   const [activities, setActivities] = useState<Activity[]>([]);
-  const [currentActivity, setCurrentActivity] = useState('')
+  const [currentActivityCategory, setCurrentActivity] = useState('')
   const [categories, setCategories] = useState<string[]>([])
   const [filteredCategories, setFilteredCategories] = useState<string[]>([])
   const [isCommandOpen, setIsCommandOpen] = useState(false)
@@ -39,6 +60,7 @@ export default function Component() {
   const inputRef = useRef<HTMLInputElement>(null)
   const [settings, setSettings] = useState<Settings>(defaultSettings) // Track user settings
   const [loading, setLoading] = useState(true)
+  const [inBreak, setInBreak] = useState(false)
 
 
   const [modals, setModals] = useState({ settings: false, stats: false });
@@ -150,14 +172,14 @@ export default function Component() {
       timerRef.current = setInterval(() => {
         setTime((prevTime) => prevTime - 1)
       }, 1000)
-      document.title = `${formatTime(time)} remaining - ${currentActivity}`
+      document.title = `${formatTime(time)} remaining - ${currentActivityCategory}`
     } else if (time === 0 && !hasAlerted.current) {
       setIsActive(false)
       if (audioRef.current) {
         audioRef.current.play()
       }
-      handleAddNewActivity(currentActivity)
-      alert(`${currentActivity} session completed!`)
+      handleAddNewActivity(currentActivityCategory)
+      alert(`${currentActivityCategory} session completed!`)
       hasAlerted.current = true
       document.title = `Lock in!`
     }
@@ -168,15 +190,27 @@ export default function Component() {
         timerRef.current = null
       }
     }
-  }, [isActive, time, currentActivity])
+  }, [isActive, time, currentActivityCategory])
 
 
   const startTimer = (duration: number, activity: string) => {
-    setTime(duration * 60)
-    setCurrentActivity(activity)
-    handleAddNewCategory()
-    setIsActive(true)
-    hasAlerted.current = false
+    if (
+      (currentActivityCategory === 'Short Break' || 
+      currentActivityCategory === 'Long Break') &&
+      duration === settings.defaultTimeLength
+    ) {
+      setTime(duration * 60)
+      setCurrentActivity('')
+      handleAddNewCategory()
+      setIsActive(true)
+      hasAlerted.current = false
+    } else {
+      setTime(duration * 60)
+      setCurrentActivity(activity)
+      handleAddNewCategory()
+      setIsActive(true)
+      hasAlerted.current = false
+    }
   }
 
   const resetTimer = () => {
@@ -184,8 +218,17 @@ export default function Component() {
       clearInterval(timerRef.current)
     }
     setIsActive(false)
-    setTime((settings?.defaultTimeLength?? 25) * 60) 
-    setCurrentActivity('')
+    if (inBreak) {
+      if (currentActivityCategory === 'Short Break') {
+        setTime((settings?.shortBreak??defaultSettings.shortBreak) * 60)
+      }
+      else {
+        setTime((settings?.longBreak??defaultSettings.longBreak) * 60)
+      }
+    } else {
+      setTime((settings?.defaultTimeLength?? defaultSettings.defaultTimeLength) * 60) 
+      setCurrentActivity('')
+    }
     document.title = `Lock in!`
     hasAlerted.current = false
   }
@@ -218,17 +261,11 @@ export default function Component() {
   };
 
   const handleAddNewCategory = async () => {
-    if (currentActivity !== '' && !filteredCategories.includes(currentActivity)) {
+    if (currentActivityCategory !== '' && !filteredCategories.includes(currentActivityCategory)) {
       if (user) {
         // Add new category to the settings in Firebase for logged-in users
-        const existingSettings = settings || {
-          longBreak: 15,
-          shortBreak: 10,
-          defaultTimeLength: 25,
-          activityCategories: []
-        };
-        const updatedCategories = [...existingSettings.activityCategories, { name: currentActivity, color: '#ff0000' }];
-        const updatedSettings = { ...existingSettings, activityCategories: updatedCategories };
+        const updatedCategories = [...defaultSettings.activityCategories, { name: currentActivityCategory, color: generateRandomHexColor() }];
+        const updatedSettings = { ...defaultSettings, activityCategories: updatedCategories };
   
         setSettings(updatedSettings);
         setFilteredCategories(updatedCategories.map(category => category.name));
@@ -236,17 +273,11 @@ export default function Component() {
         // Update Firestore
         const userRef = doc(firestore, `users/${user.uid}`);
         await setDoc(userRef, { settings: updatedSettings }, { merge: true });
-        toast({ title: `added new category "${currentActivity}" to your saved list!` });
+        toast({ title: `added new category "${currentActivityCategory}" to your saved list!` });
       } else {
         // Save the new category to localStorage for logged-out users
-        const existingSettings = settings || {
-          longBreak: 15,
-          shortBreak: 10,
-          defaultTimeLength: 25,
-          activityCategories: []
-        };
-        const updatedCategories = [...existingSettings.activityCategories, { name: currentActivity, color: '#ff0000' }];
-        const updatedSettings = { ...existingSettings, activityCategories: updatedCategories };
+        const updatedCategories = [...defaultSettings.activityCategories, { name: currentActivityCategory, color: generateRandomHexColor() }];
+        const updatedSettings = { ...defaultSettings, activityCategories: updatedCategories };
   
         setSettings(updatedSettings);
         setCategories(updatedSettings.activityCategories.map(category => category.name))
@@ -254,7 +285,7 @@ export default function Component() {
   
         // Save settings to localStorage
         localStorage.setItem('settings', JSON.stringify(updatedSettings));
-        toast({ title: `added new category "${currentActivity}" to your local settings!` });
+        toast({ title: `added new category "${currentActivityCategory}" to your local settings!` });
       }
     }
   };
@@ -313,37 +344,20 @@ export default function Component() {
 
   return (
     <div className="min-h-screen flex items-center justify-center p-4">
-      <Card className="w-full max-w-3xl mx-auto">
-        <CardHeader>
+      <Card className={`w-full max-w-3xl mx-auto transition-colors duration-500 ease-in-out ${inBreak ? 'bg-primary-foreground' : ''}`}>        <CardHeader>
           {/* <CardTitle className="text-4xl font-bold text-center">Tomato Timer</CardTitle> */}
         </CardHeader>
         <CardContent>
           <div className="flex flex-col items-center space-y-8">
-            <div className="text-9xl font-bold tabular-nums" style={{ fontSize: 'clamp(4rem, 10vw, 8rem)' }}>{formatTime(time)}</div>
-            <div className="text-3xl font-semibold">{currentActivity}</div>
-            <div className="flex flex-wrap justify-center gap-4">
-              <Button onClick={() => startTimer(settings?.defaultTimeLength || 25, currentActivity)} className="bg-red-600 hover:bg-red-700 text-white text-xl py-6 px-8">
-                lock in!
-              </Button>
-              <Button onClick={() => startTimer(settings?.shortBreak || 10, 'Short Break')} variant="secondary" className="text-xl py-6 px-8">
-                short break
-              </Button>
-              <Button onClick={() => startTimer(settings?.longBreak || 15, 'Long Break')} variant="secondary" className="text-xl py-6 px-8">
-                long break
-              </Button>
-              <Button onClick={resetTimer} variant="outline" className="text-xl py-6 px-8">
-                <ResetIcon className="h-6 w-6 mr-2" />
-                reset
-              </Button>
-            </div>
-            <div className="w-full max-w-md flex flex-col items-center">
-              <div className="flex items-center space-x-4 w-full">
-                <div className="relative flex-1">
+            <div className="flex flex-row space-x-7"><p>lock in</p><Switch onClick={() => {setInBreak(prevState => !prevState)}}></Switch><p>take break</p></div>
+            <div className="flex flex-col space-y-6 items-center justify-center">
+              <div className="text-9xl font-bold tabular-nums" style={{ fontSize: 'clamp(4rem, 10vw, 8rem)' }}>{formatTime(time)}</div>
+              <div className="relative flex-1">
                   <Input
                     type="text"
                     id="activity-category"
                     ref={inputRef}
-                    value={currentActivity}
+                    value={currentActivityCategory}
                     onClick={handleCategoryInputClick}
                     onChange={(e) => handleCategoryChange(e.target.value)}
                     onKeyDown={handleKeyDown}
@@ -353,17 +367,17 @@ export default function Component() {
                     placeholder="enter category"
                     style={{ caretColor: 'black', fontSize: '1rem'}}
                   />
-                  {suggestion && suggestion !== currentActivity && (
+                  {suggestion && suggestion !== currentActivityCategory && (
                     <span
                       className="absolute top-1/2 left-4 transform -translate-y-1/2 text-gray-400 pointer-events-none"
                       style={{
-                        paddingLeft: `${currentActivity.length}ch`,
+                        paddingLeft: `${currentActivityCategory.length}ch`,
                         fontSize: 'inherit',
                         lineHeight: 'inherit',
                         fontWeight: 'inherit',
                       }}
                     >
-                      {suggestion.slice(currentActivity.length)}
+                      {suggestion.slice(currentActivityCategory.length)}
                     </span>
                   )}
                   {isCommandOpen && (
@@ -374,6 +388,7 @@ export default function Component() {
                             <CommandItem
                               key={index}
                               onMouseDown={() => handleCategorySelect(category)}
+                              className="transition-colors duration-200 ease-in-out cursor-pointer px-2 py-1"
                             >
                               {category}
                             </CommandItem>
@@ -385,6 +400,62 @@ export default function Component() {
                     </Command>
                   )}
                 </div>
+              {/* <div className="text-3xl font-semibold">{currentActivityCategory}</div> */}
+              <div className="flex flex-row items-center gap-4">
+                <div className="items-center relative w-40">
+                  <div
+                    className={`transition-all duration-300 ease-in-out transform ${
+                      inBreak ? 'opacity-100 scale-100 visible' : 'opacity-0 scale-90 invisible'
+                    } absolute inset-0 flex justify-center items-center`}
+                  >
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button variant="secondary" className="text-xl py-4 px-4 w-40">
+                          take break
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="center">
+                        <DropdownMenuItem>
+                          <Button
+                            onClick={() => startTimer(settings?.shortBreak || 10, 'Short Break')}
+                            variant="secondary"
+                            className="text-xl py-4 px-4 w-40"
+                          >
+                            short
+                          </Button>
+                        </DropdownMenuItem>
+                        <DropdownMenuItem>
+                          <Button
+                            onClick={() => startTimer(settings?.longBreak || 15, 'Long Break')}
+                            variant="secondary"
+                            className="text-xl py-4 px-4 w-40"
+                          >
+                            long
+                          </Button>
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </div>
+
+                  <div
+                    className={`transition-all duration-300 ease-in-out transform ${
+                      !inBreak ? 'opacity-100 scale-100 visible' : 'opacity-0 scale-90 invisible'
+                    } absolute inset-0 flex justify-center items-center`}
+                  >
+                    <Button
+                      onClick={() => startTimer(settings?.defaultTimeLength || 25, currentActivityCategory)}
+                      className="bg-red-600 hover:bg-red-700 text-white text-xl py-6 px-8 w-40"
+                    >
+                      lock in
+                    </Button>
+                  </div>
+                </div>
+                <Button onClick={resetTimer} variant="outline" className="text-xl py-6 px-8">
+                  <ResetIcon className="h-6 w-6 mr-2" />
+                  reset
+                </Button>
+              </div>
+              <div className="max-w-md flex flex-row items-center space-x-8">
                 <TooltipProvider>
                   <Tooltip>
                     <TooltipTrigger asChild>
@@ -396,7 +467,7 @@ export default function Component() {
                       view stats
                     </TooltipContent>
                   </Tooltip>
-                  </TooltipProvider>
+                </TooltipProvider>
                 <TooltipProvider>
                   <Tooltip>
                     <TooltipTrigger asChild>
