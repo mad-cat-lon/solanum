@@ -7,12 +7,14 @@ import {
   FirebaseAppProvider,
   FirestoreProvider,
   useFirebaseApp,
+  AppCheckProvider
 } from "reactfire";
 import { getAuth } from "firebase/auth";
 import { getFirestore } from "firebase/firestore";
 import { isBrowser } from "@/lib/utils";
 import { getAnalytics } from "firebase/analytics";
 import { FirebaseOptions } from "firebase/app";
+import { initializeAppCheck, ReCaptchaV3Provider  } from "firebase/app-check";
 
 const config: FirebaseOptions = {
   apiKey: "AIzaSyCBy84omqVrB-_U5gstU2OvsseuPjmm9PQ",
@@ -30,20 +32,25 @@ const FirebaseProviderSDKs: FC<{ children: ReactNode }> = ({ children }) => {
   const auth = useMemo(() => getAuth(), []);
   const firestore = useMemo(() => getFirestore(firebase), []);
   const analytics = useMemo(() => isBrowser() && getAnalytics(firebase), []);
-
+  const appCheck = initializeAppCheck(firebase, {
+    provider: new ReCaptchaV3Provider ("6LeyozkqAAAAABWoX_ZHyfDrMDq5Cc3GbEHm_VNu"),
+    isTokenAutoRefreshEnabled: true
+  });
   return (
     <>
       {auth && (
-        <AuthProvider sdk={auth}>
-          <FirestoreProvider sdk={firestore}>
-            {/* we can only use analytics in the browser */}
-            {analytics ? (
-              <AnalyticsProvider sdk={analytics}>{children}</AnalyticsProvider>
-            ) : (
-              <>{children}</>
-            )}
-          </FirestoreProvider>
-        </AuthProvider>
+        <AppCheckProvider sdk={appCheck}>
+          <AuthProvider sdk={auth}>
+            <FirestoreProvider sdk={firestore}>
+              {/* we can only use analytics in the browser */}
+              {analytics ? (
+                <AnalyticsProvider sdk={analytics}>{children}</AnalyticsProvider>
+              ) : (
+                <>{children}</>
+              )}
+            </FirestoreProvider>
+          </AuthProvider>
+        </AppCheckProvider>
       )}
     </>
   );
