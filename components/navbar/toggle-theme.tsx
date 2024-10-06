@@ -250,13 +250,13 @@ export function ThemeToggle() {
             >
               vintage
             </DropdownMenuItem>
-            <DropdownMenuItem
+            {/* <DropdownMenuItem
             onClick={() => handleClick("vaporwave")}
             onMouseEnter={() => handleMouseEnter("vaporwave")}
             onMouseLeave={handleMouseLeave}
             >
               vaporwave
-            </DropdownMenuItem>
+            </DropdownMenuItem> */}
             <DropdownMenuItem
             onClick={() => handleClick("hacker")}
             onMouseEnter={() => handleMouseEnter("hacker")}

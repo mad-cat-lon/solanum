@@ -21,7 +21,13 @@ import { Activity, Settings, defaultCategories, defaultSettings } from "@/types/
 import { toast } from "@/components/ui/use-toast";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Command, CommandInput, CommandList, CommandEmpty, CommandItem } from "@/components/ui/command"
-import { ResetIcon, ActivityLogIcon, GearIcon } from '@radix-ui/react-icons'
+import { 
+  ResetIcon,
+  ActivityLogIcon,
+  GearIcon,
+  PauseIcon,
+  ResumeIcon
+} from '@radix-ui/react-icons'
 import { collection, addDoc, query, getDocs, getDoc, setDoc, doc, Timestamp} from 'firebase/firestore';
 import { useFirestore, useUser } from 'reactfire';
 import { StatsModal } from '@/components/stats-modal';
@@ -42,12 +48,11 @@ const generateRandomHexColor = () => {
   return `#${redHex}${greenHex}${blueHex}`;
 };
 
-
 export default function Component() {
   const firestore = useFirestore()
   const { data: user } = useUser()
   const [time, setTime] = useState(25 * 60)
-  const [isActive, setIsActive] = useState(false)
+  const [isTimerRunning, setIsTimerRunning] = useState(false)
   const [activities, setActivities] = useState<Activity[]>([]);
   const [currentActivityCategory, setCurrentActivity] = useState('')
   const [categories, setCategories] = useState<string[]>([])
@@ -68,9 +73,56 @@ export default function Component() {
     setModals(prev => ({ ...prev, [modalName]: !prev[modalName] }));
   };
 
+  
+  const getOrSetLocalActivities = (newActivities: Activity[] | null) => {
+    if (newActivities === null) {
+      const localActivities = localStorage.getItem('activities');
+      if (localActivities) {
+        const parsedActivities = JSON.parse(localActivities) as Activity[];
+        setActivities(parsedActivities);
+      }
+    } else {
+      localStorage.setItem('activities', JSON.stringify(newActivities));
+    }
+  };
+
+
+  const getOrSetLocalSettings = (newLocalSettings: Settings | null) => {
+    if (newLocalSettings === null) {
+      const localSettings = localStorage.getItem('settings');
+      // console.log('Checking for local settings doc')
+      if (localSettings) {
+        // console.log('Retrieving from local settings')
+        const parsedSettings = JSON.parse(localSettings) as Partial<Settings>;
+        // Merge local settings with default settings
+        const mergedSettings: Settings = {
+          ...defaultSettings, // Start with defaults
+          ...parsedSettings, // Override with local storage settings
+          activityCategories: parsedSettings.activityCategories 
+            ? parsedSettings.activityCategories 
+            : defaultSettings.activityCategories
+        };
+        setSettings(mergedSettings);
+        setCategories(mergedSettings.activityCategories.map(category => category.name));
+        setFilteredCategories(mergedSettings.activityCategories.map(category => category.name));
+        setTime(mergedSettings.defaultTimeLength * 60);
+
+      } else {
+        // console.log('Falling back to default local settings')
+        setSettings(defaultSettings);
+        // Fallback to default settings if no localSettings are found
+        setTime(25 * 60);
+        setCategories(defaultCategories.map(category => category.name));
+        setFilteredCategories(defaultCategories.map(category => category.name));
+      }
+    } else {
+      localStorage.setItem('settings', JSON.stringify(newLocalSettings));
+    }
+  }
+
   useEffect(() => {
     const handleBeforeUnload = (e: BeforeUnloadEvent) => {
-      if (isActive) {
+      if (isTimerRunning) {
         e.preventDefault();
         e.returnValue = ''; 
       }
@@ -81,7 +133,7 @@ export default function Component() {
     return () => {
       window.removeEventListener('beforeunload', handleBeforeUnload);
     };
-  }, [isActive]);
+  }, [isTimerRunning]);
 
   // Callback handler for updating settings
   const handleSettingsUpdate = (updatedSettings: Settings) => {
@@ -91,39 +143,27 @@ export default function Component() {
     setFilteredCategories(updatedCategories); 
   };
 
-  useEffect(() => {
-    const getOrSetLocalSettings = (newLocalSettings: Settings | null) => {
-      if (newLocalSettings === null) {
-        const localSettings = localStorage.getItem('settings');
-        // console.log('Checking for local settings doc')
-        if (localSettings) {
-          // console.log('Retrieving from local settings')
-          const parsedSettings = JSON.parse(localSettings) as Partial<Settings>;
-          // Merge local settings with default settings
-          const mergedSettings: Settings = {
-            ...defaultSettings, // Start with defaults
-            ...parsedSettings, // Override with local storage settings
-            activityCategories: parsedSettings.activityCategories 
-              ? parsedSettings.activityCategories 
-              : defaultSettings.activityCategories
-          };
-          setSettings(mergedSettings);
-          setCategories(mergedSettings.activityCategories.map(category => category.name));
-          setFilteredCategories(mergedSettings.activityCategories.map(category => category.name));
-          setTime(mergedSettings.defaultTimeLength * 60);
-
-        } else {
-          // console.log('Falling back to default local settings')
-          setSettings(defaultSettings);
-          // Fallback to default settings if no localSettings are found
-          setTime(25 * 60);
-          setCategories(defaultCategories.map(category => category.name));
-          setFilteredCategories(defaultCategories.map(category => category.name));
-        }
-      } else {
-        localStorage.setItem('settings', JSON.stringify(newLocalSettings));
+  const syncLocalActivities = async () => {
+    if (navigator.onLine && user) {
+      const localActivities = JSON.parse(localStorage.getItem('activities') || '[]');
+      const activityCollectionRef = collection(firestore, `users/${user.uid}/activity`);
+  
+      for (const activity of localActivities) {
+        await addDoc(activityCollectionRef, activity);
       }
+      localStorage.removeItem('activities'); // Clear local activities after sync
+      toast({title: "synced local activity log"})
     }
+  };
+
+  useEffect(() => {
+    window.addEventListener('online', syncLocalActivities);
+    return () => {
+      window.removeEventListener('online', syncLocalActivities);
+    };
+  }, []);
+
+  useEffect(() => {
     const fetchUserData = async () => {
       if (user) {
         // Fetch settings from Firebase for logged-in users
@@ -153,9 +193,11 @@ export default function Component() {
         const activitiesSnapshot = await getDocs(activitiesRef);
         const fetchedActivities = activitiesSnapshot.docs.map(doc => doc.data() as Activity);
         setActivities(fetchedActivities);
+        getOrSetLocalActivities(fetchedActivities);
 
       } else {
         getOrSetLocalSettings(null);
+        getOrSetLocalActivities(null);
       }
       setLoading(false); 
     };
@@ -168,13 +210,13 @@ export default function Component() {
   }, [])
 
   useEffect(() => {
-    if (isActive && time > 0) {
+    if (isTimerRunning && time > 0) {
       timerRef.current = setInterval(() => {
         setTime((prevTime) => prevTime - 1)
       }, 1000)
       document.title = `${formatTime(time)} remaining - ${currentActivityCategory}`
     } else if (time === 0 && !hasAlerted.current) {
-      setIsActive(false)
+      setIsTimerRunning(false)
       if (audioRef.current) {
         audioRef.current.play()
       }
@@ -182,7 +224,7 @@ export default function Component() {
       alert(`${currentActivityCategory} session completed!`)
       hasAlerted.current = true
       document.title = `Lock in!`
-    }
+    } 
 
     return () => {
       if (timerRef.current) {
@@ -190,7 +232,7 @@ export default function Component() {
         timerRef.current = null
       }
     }
-  }, [isActive, time, currentActivityCategory])
+  }, [isTimerRunning, time, currentActivityCategory])
 
 
   const startTimer = (duration: number, activity: string) => {
@@ -202,13 +244,13 @@ export default function Component() {
       setTime(duration * 60)
       setCurrentActivity('')
       handleAddNewCategory()
-      setIsActive(true)
+      setIsTimerRunning(true)
       hasAlerted.current = false
     } else {
       setTime(duration * 60)
       setCurrentActivity(activity)
       handleAddNewCategory()
-      setIsActive(true)
+      setIsTimerRunning(true)
       hasAlerted.current = false
     }
   }
@@ -216,8 +258,9 @@ export default function Component() {
   const resetTimer = () => {
     if (timerRef.current) {
       clearInterval(timerRef.current)
+      timerRef.current = null
     }
-    setIsActive(false)
+    setIsTimerRunning(false)
     if (inBreak) {
       if (currentActivityCategory === 'Short Break') {
         setTime((settings?.shortBreak??defaultSettings.shortBreak) * 60)
@@ -233,6 +276,25 @@ export default function Component() {
     hasAlerted.current = false
   }
 
+  const handleTimerState = () => {
+    if (isTimerRunning) {
+      // Pause the timer: Clear the interval
+      if (timerRef.current) {
+        clearInterval(timerRef.current);
+        timerRef.current = null;
+      }
+      setIsTimerRunning(false);
+    } else {
+      // Resume the timer: Start a new interval if no active timer exists
+      if (!timerRef.current && time > 0) {
+        timerRef.current = setInterval(() => {
+          setTime((prevTime) => prevTime - 1);
+        }, 1000);
+      }
+      setIsTimerRunning(true);
+    }
+  }
+  
   const formatTime = (seconds: number) => {
     const mins = Math.floor(seconds / 60)
     const secs = seconds % 60
@@ -294,7 +356,7 @@ export default function Component() {
     // Record default category if none was provided
     const newActivity = {
       timestamp: Timestamp.fromDate(new Date()),
-      type: activityCategory === '' ? 'Default' : activityCategory
+      type: activityCategory === '' ? 'Default' : activityCategory,
     };
     if (user) {
       // Submit the completed activity to Firestore
@@ -343,13 +405,20 @@ export default function Component() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-4">
-      <Card className={`w-full max-w-3xl mx-auto transition-colors duration-500 ease-in-out ${inBreak ? 'bg-primary-foreground' : ''}`}>        <CardHeader>
-          {/* <CardTitle className="text-4xl font-bold text-center">Tomato Timer</CardTitle> */}
+    <div className="min-h-screen flex items-center justify-center p-3">
+      <Card 
+        className={`w-full max-w-3xl mx-auto transition-colors duration-500 ease-in-out ${inBreak ? 'bg-muted text-muted-foreground' : ''}`}  
+      >      
+        <CardHeader>
+          <CardTitle>{currentActivityCategory}</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="flex flex-col items-center space-y-8">
-            <div className="flex flex-row space-x-7"><p>lock in</p><Switch onClick={() => {setInBreak(prevState => !prevState)}}></Switch><p>take break</p></div>
+            <div className="flex flex-row space-x-7">
+              <div>lock in</div>
+              <Switch onClick={() => {setInBreak(prevState => !prevState)}}/>
+              <div>take break</div>
+            </div>
             <div className="flex flex-col space-y-6 items-center justify-center">
               <div className="text-9xl font-bold tabular-nums" style={{ fontSize: 'clamp(4rem, 10vw, 8rem)' }}>{formatTime(time)}</div>
               <div className="relative flex-1">
@@ -363,7 +432,7 @@ export default function Component() {
                     onKeyDown={handleKeyDown}
                     onFocus={() => setIsCommandOpen(true)}
                     onBlur={() => setIsCommandOpen(false)}
-                    className="py-3 pl-4 pr-20 w-full bg-transparent border-2 border-gray-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 rounded-md caret-black transition-all duration-150 ease-in-out"
+                    className="py-3 pl-4 pr-20 w-full bg-transparent border-2 rounded-md caret-black transition-all duration-150 ease-in-out"
                     placeholder="enter category"
                     style={{ caretColor: 'black', fontSize: '1rem'}}
                   />
@@ -400,7 +469,6 @@ export default function Component() {
                     </Command>
                   )}
                 </div>
-              {/* <div className="text-3xl font-semibold">{currentActivityCategory}</div> */}
               <div className="flex flex-row items-center gap-4">
                 <div className="items-center relative w-40">
                   <div
@@ -410,7 +478,7 @@ export default function Component() {
                   >
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
-                        <Button variant="secondary" className="text-xl py-4 px-4 w-40">
+                        <Button variant="outline" className="text-xl py-4 px-4 w-40">
                           take break
                         </Button>
                       </DropdownMenuTrigger>
@@ -453,6 +521,24 @@ export default function Component() {
                 <Button onClick={resetTimer} variant="outline" className="text-xl py-6 px-8">
                   <ResetIcon className="h-6 w-6 mr-2" />
                   reset
+                </Button>
+              </div>
+              <div className="flex flex-row items-center space-x-8">
+                <Button onClick={handleTimerState} variant="outline" className={`text-xl py-6 px-8`}>
+                  { 
+                    isTimerRunning ? (
+                      <div className='flex flex-row items-center'>
+                      <PauseIcon className="h-6 w-6 mr-2"/>
+                      pause
+                      </div>
+                    )
+                    : (
+                      <div className='flex flex-row items-center'>
+                      <ResumeIcon className="h-6 w-6 mr-2"/>
+                      resume
+                      </div>
+                    )
+                  }
                 </Button>
               </div>
               <div className="max-w-md flex flex-row items-center space-x-8">
