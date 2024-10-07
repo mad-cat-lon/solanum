@@ -450,7 +450,7 @@ export default function Component() {
                     </span>
                   )}
                   {isCommandOpen && (
-                    <Command className="absolute z-20 w-full mt-1 overflow-hidden" style={{ minHeight: '150px' }}>
+                    <Command className="absolute z-20 w-full mt-1 overflow-hidden" style={{ minHeight: filteredCategories.length > 2 ? '150px' : '75px' }}>
                       <CommandList>
                         {filteredCategories.length > 0 ? (
                           filteredCategories.map((category, index) => (
@@ -463,7 +463,7 @@ export default function Component() {
                             </CommandItem>
                           ))
                         ) : (
-                          <CommandEmpty>no matching categories found</CommandEmpty>
+                          <CommandEmpty>no existing categories found</CommandEmpty>
                         )}
                       </CommandList>
                     </Command>
