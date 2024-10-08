@@ -23,6 +23,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Command, CommandInput, CommandList, CommandEmpty, CommandItem } from "@/components/ui/command"
 import { 
   ResetIcon,
+  CounterClockwiseClockIcon,
   ActivityLogIcon,
   GearIcon,
   PauseIcon,
@@ -255,7 +256,7 @@ export default function Component() {
     }
   }
 
-  const resetTimer = () => {
+  const restartTimer = () => {
     if (timerRef.current) {
       clearInterval(timerRef.current)
       timerRef.current = null
@@ -270,10 +271,13 @@ export default function Component() {
       }
     } else {
       setTime((settings?.defaultTimeLength?? defaultSettings.defaultTimeLength) * 60) 
-      setCurrentActivity('')
     }
     document.title = `Lock in!`
     hasAlerted.current = false
+  }
+
+  const resetTimer = () => {
+    setCurrentActivity('')
   }
 
   const handleTimerState = () => {
@@ -408,10 +412,15 @@ export default function Component() {
     <div className="min-h-screen flex items-center justify-center p-3">
       <Card 
         className={`w-full max-w-3xl mx-auto transition-colors duration-500 ease-in-out ${inBreak ? 'bg-muted text-muted-foreground' : ''}`}  
-      >      
-        <CardHeader>
-          <CardTitle>{currentActivityCategory}</CardTitle>
-        </CardHeader>
+      >
+        <div className="transition-all duration-500 ease-in-out max-h-10 overflow-hidden" 
+       style={{
+         maxHeight: currentActivityCategory ? '100px' : '50px', 
+       }}>
+          <CardHeader>
+            <CardTitle className="transition-all duration-300 ease-in-out">{currentActivityCategory}</CardTitle>
+          </CardHeader>
+        </div>
         <CardContent>
           <div className="flex flex-col items-center space-y-8">
             <div className="flex flex-row space-x-7">
@@ -435,6 +444,7 @@ export default function Component() {
                     className="py-3 pl-4 pr-20 w-full bg-transparent border-2 rounded-md caret-black transition-all duration-150 ease-in-out"
                     placeholder="enter category"
                     style={{ caretColor: 'black', fontSize: '1rem'}}
+                    disabled={inBreak}
                   />
                   {suggestion && suggestion !== currentActivityCategory && (
                     <span
@@ -450,7 +460,14 @@ export default function Component() {
                     </span>
                   )}
                   {isCommandOpen && (
-                    <Command className="absolute z-20 w-full mt-1 overflow-hidden" style={{ minHeight: filteredCategories.length > 2 ? '150px' : '75px' }}>
+                    <Command
+                    className="absolute z-20 w-full overflow-hidden transition-all duration-300" 
+                    style={{
+                      maxHeight: filteredCategories.length > 5 ? '10rem' : 'auto', 
+                      height: filteredCategories.length === 0 ? '5rem' : `${Math.min(filteredCategories.length * 3, 15)}rem`,  
+                      overflowY: filteredCategories.length > 5 ? 'auto' : 'hidden', 
+                    }}
+                    >
                       <CommandList>
                         {filteredCategories.length > 0 ? (
                           filteredCategories.map((category, index) => (
@@ -469,77 +486,83 @@ export default function Component() {
                     </Command>
                   )}
                 </div>
-              <div className="flex flex-row items-center gap-4">
-                <div className="items-center relative w-40">
-                  <div
-                    className={`transition-all duration-300 ease-in-out transform ${
-                      inBreak ? 'opacity-100 scale-100 visible' : 'opacity-0 scale-90 invisible'
-                    } absolute inset-0 flex justify-center items-center`}
-                  >
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button variant="outline" className="text-xl py-4 px-4 w-40">
-                          take break
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="center">
-                        <DropdownMenuItem>
-                          <Button
-                            onClick={() => startTimer(settings?.shortBreak || 10, 'Short Break')}
-                            variant="secondary"
-                            className="text-xl py-4 px-4 w-40"
-                          >
-                            short
-                          </Button>
-                        </DropdownMenuItem>
-                        <DropdownMenuItem>
-                          <Button
-                            onClick={() => startTimer(settings?.longBreak || 15, 'Long Break')}
-                            variant="secondary"
-                            className="text-xl py-4 px-4 w-40"
-                          >
-                            long
-                          </Button>
-                        </DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                  </div>
-
-                  <div
-                    className={`transition-all duration-300 ease-in-out transform ${
-                      !inBreak ? 'opacity-100 scale-100 visible' : 'opacity-0 scale-90 invisible'
-                    } absolute inset-0 flex justify-center items-center`}
-                  >
-                    <Button
-                      onClick={() => startTimer(settings?.defaultTimeLength || 25, currentActivityCategory)}
-                      className="bg-red-600 hover:bg-red-700 text-white text-xl py-6 px-8 w-40"
+              <div className="flex flex-col space-y-6 items-center justify-center">
+                <div className="flex flex-row items-center gap-4 justify-center">
+                  <div className="items-center relative w-40">
+                    <div
+                      className={`transition-all duration-300 ease-in-out transform ${
+                        inBreak ? 'opacity-100 scale-100 visible' : 'opacity-0 scale-90 invisible'
+                      } absolute inset-0 flex justify-center items-center`}
                     >
-                      lock in
-                    </Button>
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button variant="outline" className="text-xl py-4 px-4 w-40">
+                            take break
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="center">
+                          <DropdownMenuItem>
+                            <Button
+                              onClick={() => startTimer(settings?.shortBreak || 10, 'Short Break')}
+                              variant="secondary"
+                              className="text-xl py-4 px-4 w-40"
+                            >
+                              short
+                            </Button>
+                          </DropdownMenuItem>
+                          <DropdownMenuItem>
+                            <Button
+                              onClick={() => startTimer(settings?.longBreak || 15, 'Long Break')}
+                              variant="secondary"
+                              className="text-xl py-4 px-4 w-40"
+                            >
+                              long
+                            </Button>
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </div>
+
+                    <div
+                      className={`transition-all duration-300 ease-in-out transform ${
+                        !inBreak ? 'opacity-100 scale-100 visible' : 'opacity-0 scale-90 invisible'
+                      } absolute inset-0 flex justify-center items-center`}
+                    >
+                      <Button
+                        onClick={() => startTimer(settings?.defaultTimeLength || 25, currentActivityCategory)}
+                        className="bg-red-600 hover:bg-red-700 text-white text-xl py-6 px-8 w-40"
+                      >
+                        lock in
+                      </Button>
+                    </div>
                   </div>
+                  <Button onClick={restartTimer} variant="outline" className="text-xl py-6 px-8 w-40">
+                    <CounterClockwiseClockIcon className="h-6 w-6 mr-2" />
+                    restart
+                  </Button>
                 </div>
-                <Button onClick={resetTimer} variant="outline" className="text-xl py-6 px-8">
-                  <ResetIcon className="h-6 w-6 mr-2" />
-                  reset
-                </Button>
-              </div>
-              <div className="flex flex-row items-center space-x-8">
-                <Button onClick={handleTimerState} variant="outline" className={`text-xl py-6 px-8`}>
-                  { 
-                    isTimerRunning ? (
-                      <div className='flex flex-row items-center'>
-                      <PauseIcon className="h-6 w-6 mr-2"/>
-                      pause
-                      </div>
-                    )
-                    : (
-                      <div className='flex flex-row items-center'>
-                      <ResumeIcon className="h-6 w-6 mr-2"/>
-                      resume
-                      </div>
-                    )
-                  }
-                </Button>
+                <div className="flex flex-row items-center space-x-4 justify-center">
+                  <Button onClick={handleTimerState} variant="outline" className="text-xl py-6 px-8 w-40">
+                    { 
+                      isTimerRunning ? (
+                        <div className='flex flex-row items-center'>
+                        <PauseIcon className="h-6 w-6 mr-2"/>
+                        pause
+                        </div>
+                      )
+                      : (
+                        <div className='flex flex-row items-center'>
+                        <ResumeIcon className="h-6 w-6 mr-2"/>
+                        resume
+                        </div>
+                      )
+                    }
+                  </Button>
+                  <Button onClick={resetTimer} variant="outline" className="text-xl py-6 px-8 w-40">
+                    <ResetIcon className="h-8 w-8 mr-2"/>
+                    reset
+                  </Button>
+                </div>
               </div>
               <div className="max-w-md flex flex-row items-center space-x-8">
                 <TooltipProvider>
