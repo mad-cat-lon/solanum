@@ -203,13 +203,6 @@ export function ThemeToggle() {
               forest
             </DropdownMenuItem>
             <DropdownMenuItem
-              onClick={() => handleClick("sunset")}
-              onMouseEnter={() => handleMouseEnter("sunset")}
-              onMouseLeave={handleMouseLeave}
-            >
-              sunset
-            </DropdownMenuItem>
-            <DropdownMenuItem
               onClick={() => handleClick("midnight-aurora")}
               onMouseEnter={() => handleMouseEnter("midnight-aurora")}
               onMouseLeave={handleMouseLeave}
