@@ -20,7 +20,7 @@ export const ActivityGraph: React.FC = () => {
   const [chartData, setChartData] = useState<ChartData[]>([]);
   const [activityCategories, setActivityCategories] = useState<string[]>([]); // To store unique task types dynamically
   const [maxValue, setMaxValue] = useState<number>(0); // To store max value
-  const [selectedCategory, setSelectedCategory] = useState<string>('All'); // For category filter
+  const [selectedCategory, setSelectedCategory] = useState<string>('all'); // For category filter
   const [totalTaskCount, setTotalTaskCount] = useState<number>(0);// for the total number of time spent
   const [viewType, setViewType] = useState<'lineChart' | 'stackedBarChart' | 'cumulative'>('lineChart');
 
@@ -146,14 +146,16 @@ export const ActivityGraph: React.FC = () => {
 
   useEffect(() => {
     const { start, end } = getDateRange();
-    fetchMoreActivities(start, end);
+    if (start && end) {
+      fetchMoreActivities(start, end);
+    }
   }, [selectedRange, customDateRange]);
 
 
   useEffect(() => {
     if (chartData.length > 0) {
       const totalTaskCount = chartData.reduce((total, data) => {
-        if (selectedCategory === 'All') {
+        if (selectedCategory === 'all') {
           // Filter out "Short Break" and "Long Break" and then calculate the total
           return total + activityCategories
             .filter((type) => type !== 'Short Break' && type !== 'Long Break')
@@ -214,23 +216,23 @@ export const ActivityGraph: React.FC = () => {
       }
       case 'custom':
         return {
-          start: customDateRange.start ?? undefined,
-          end: customDateRange.end ?? undefined
+          start: customDateRange.start || null,
+          end: customDateRange.end || null
         }
       default:
-        return { start: undefined, end: undefined };
+        return { start: null, end: null };
     }
   };
 
-  // Filter chart data based on the selected category
+  // Filter chart data based on the selected category and date range
   const filteredChartData = useMemo(() => {
-    return selectedCategory === 'All'
+    return selectedCategory === 'all'
       ? chartData
       : chartData.map(data => ({
           date: data.date,
           [selectedCategory]: data[selectedCategory] || 0,
         }));
-  }, [chartData, selectedCategory]);
+  }, [chartData, selectedCategory, selectedRange]);
 
   // Function to render the chart based on the selected view type
   const renderChart = () => {
@@ -239,7 +241,7 @@ export const ActivityGraph: React.FC = () => {
         return (
           <AreaChart data={filteredChartData}>
             <defs>
-            {selectedCategory === 'All'
+            {selectedCategory === 'all'
               ? activityCategories.map((category, index) => (
                   <linearGradient key={category} id={`color${index}`} x1="0" y1="0" x2="0" y2="1">
                     <stop offset="5%" stopColor={getColorForCategory(category)} stopOpacity={0.8} />
@@ -264,7 +266,7 @@ export const ActivityGraph: React.FC = () => {
               contentStyle={tooltipStyles}
             />
             <Legend />
-            {selectedCategory === 'All' ? (
+            {selectedCategory === 'all' ? (
               activityCategories.map((category, index) => (
                 <Area
                   key={category}
@@ -300,7 +302,7 @@ export const ActivityGraph: React.FC = () => {
               contentStyle={tooltipStyles}
             />
             <Legend />
-            {selectedCategory === 'All' ? (
+            {selectedCategory === 'all' ? (
                 activityCategories.map((category, index) => (
                   <Bar key={category} dataKey={category} stackId="a" fill={getColorForCategory(category)} />
                 ))
@@ -334,7 +336,7 @@ export const ActivityGraph: React.FC = () => {
               contentStyle={tooltipStyles}
             />
             <Legend />
-            {selectedCategory === 'All' ? (
+            {selectedCategory === 'all' ? (
                 activityCategories.map((category, index) => (
                   <Line key={category} dataKey={category} stroke={getColorForCategory(category)} />
                 ))
@@ -360,9 +362,9 @@ export const ActivityGraph: React.FC = () => {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>You locked in {totalTaskCount} times for a total of {calculateTotalTaskTime()}.</CardTitle>
+        <CardTitle>you locked in {totalTaskCount} times for a total of {calculateTotalTaskTime()}.</CardTitle>
         <CardDescription>
-          Task counts per date, categorized by task type
+          task counts per date, categorized by task type
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -370,16 +372,16 @@ export const ActivityGraph: React.FC = () => {
         <div className="flex space-x-4 mb-4">
           <Select value={selectedRange} onValueChange={(value) => setSelectedRange(value as 'today' | '7d' | 'week' | '30d' | '120d' | 'year' | 'custom')}>
             <SelectTrigger>
-              <SelectValue placeholder="Select Date Range" />
+              <SelectValue placeholder="select date range" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="7d">Last 7 Days</SelectItem>
-              <SelectItem value="today">Today</SelectItem>
-              <SelectItem value="week">This Week</SelectItem>
-              <SelectItem value="30d">Last 30 Days</SelectItem>
-              <SelectItem value="120d">Last 120 Days</SelectItem>
-              <SelectItem value="year">Last Year</SelectItem>
-              <SelectItem value="custom">Custom Range</SelectItem>
+              <SelectItem value="7d">last 7 days</SelectItem>
+              <SelectItem value="today">today</SelectItem>
+              <SelectItem value="week">this week</SelectItem>
+              <SelectItem value="30d">last 30 days</SelectItem>
+              <SelectItem value="120d">last 120 days</SelectItem>
+              <SelectItem value="year">last year</SelectItem>
+              <SelectItem value="custom">custom range</SelectItem>
             </SelectContent>
           </Select>
 
@@ -387,23 +389,23 @@ export const ActivityGraph: React.FC = () => {
             <div className="flex space-x-2">
                 <DatePicker
                   label="start date"
-                  selectedDate={customDateRange.start}
-                  onSelect={(date) => setCustomDateRange((prev) => ({...prev, start: date}))}
+                  selectedDate={customDateRange.start || undefined}
+                  onSelect={(date) => setCustomDateRange((prev) => ({...prev, start: date || undefined}))}
                 />
                 <DatePicker
                   label="end date"
-                  selectedDate={customDateRange.end}
-                  onSelect={(date) => setCustomDateRange((prev) => ({...prev, end: date}))}
+                  selectedDate={customDateRange.end || undefined}
+                  onSelect={(date) => setCustomDateRange((prev) => ({...prev, end: date || undefined}))}
                 />
             </div>
           )}
           
         <Select value={selectedCategory} onValueChange={(value) => setSelectedCategory(value)}>
           <SelectTrigger>
-            <SelectValue placeholder="Select Category" />
+            <SelectValue placeholder="select category" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="All">All Categories</SelectItem>
+            <SelectItem value="all">all categories</SelectItem>
             {activityCategories.map((type) => (
               <SelectItem key={type} value={type}>{type}</SelectItem>
             ))}
@@ -415,9 +417,9 @@ export const ActivityGraph: React.FC = () => {
             <SelectValue placeholder="Select View" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="lineChart">Line Chart</SelectItem>
-            <SelectItem value="stackedBarChart">Stacked Bar Chart</SelectItem>
-            <SelectItem value="cumulative">Cumulative Chart</SelectItem>
+            <SelectItem value="lineChart">line chart</SelectItem>
+            <SelectItem value="stackedBarChart">stacked bar chart</SelectItem>
+            <SelectItem value="cumulative">cumulative chart</SelectItem>
           </SelectContent>
         </Select>
 
@@ -427,7 +429,7 @@ export const ActivityGraph: React.FC = () => {
             {renderChart()}
           </ResponsiveContainer>
         ) : (
-          <p>No task data available.</p>
+          <p>no task data available.</p>
         )}
       </CardContent>
     </Card>

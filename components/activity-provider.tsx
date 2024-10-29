@@ -7,8 +7,6 @@ import {
   getDocs,
   query,
   orderBy,
-  limit,
-  startAfter,
   Firestore,
   where,
   QueryDocumentSnapshot
@@ -46,8 +44,6 @@ export const ActivityProvider: React.FC<ActivityProviderProps> = ({ children, ac
   const [settings, setSettings] = useState<Settings>(passedSettings || defaultSettings);
   const [categoryColors, setCategoryColors] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(!passedActivities);
-  const [lastDoc, setLastDoc] = useState<QueryDocumentSnapshot | null>(null);
-  const [allFetched, setAllFetched] = useState(false);
 
   const fetchSettings = async () => {
     if (!passedSettings) {
@@ -75,16 +71,13 @@ export const ActivityProvider: React.FC<ActivityProviderProps> = ({ children, ac
     }
   }
 
-  const fetchActivities = async (pageSize: number, lastVisibleDoc: QueryDocumentSnapshot | null, start?: Date, end?: Date) => {
+  const fetchActivities = async (start?: Date, end?: Date) => {
     const logRef = collection(firestore as Firestore, `users/${user?.uid}/log`);
     
     // Set up the query
-    let q = query(logRef, orderBy('date', 'desc'), limit(pageSize));
+    let q = query(logRef, orderBy('date', 'desc'));
     if (start && end) {
-      q = query(logRef, where('date', '>=', start), where('date', '<=', end), orderBy('date', 'desc'), limit(pageSize));
-    }
-    if (lastVisibleDoc) {
-      q = query(q, startAfter(lastVisibleDoc));
+      q = query(logRef, where('date', '>=', start), where('date', '<=', end), orderBy('date', 'desc'));
     }
   
     const querySnapshot = await getDocs(q);
@@ -93,7 +86,7 @@ export const ActivityProvider: React.FC<ActivityProviderProps> = ({ children, ac
       const date = data.date;
       const activities = data.activities.map((activity: Activity) => ({
         ...activity,
-        date: date,  // Attach the outer document's date to each activity
+        date: date, 
       }));
       return [...allActivities, ...activities];
     }, []);
@@ -105,27 +98,36 @@ export const ActivityProvider: React.FC<ActivityProviderProps> = ({ children, ac
   };
 
   const fetchInitialActivities = async (start?: Date, end?: Date) => {
+    console.log(`Fetching activities from ${start}-${end}`)
     if (user && firestore) {
       setLoading(true);
-      const { activities: newActivities, lastDoc: newLastDoc } = await fetchActivities(10, null, start, end);
+      const { activities: newActivities,} = await fetchActivities(start, end);
       
       setActivities(newActivities);
-      setLastDoc(newLastDoc);
-      setAllFetched(newActivities.length < 10);  // if less than page size, assume all fetched
       setLoading(false);
     }
   };
 
   const fetchMoreActivities = async (start?: Date, end?: Date) => {
     console.log(`Fetching activities from ${start}-${end}`)
-    if (!allFetched && lastDoc && user && firestore) {
-      const { activities: newActivities, lastDoc: newLastDoc } = await fetchActivities(10, lastDoc, start, end);
+    if (user && firestore) {
+      const { activities: newActivities } = await fetchActivities(start, end);
       console.log(activities)
       if (newActivities.length > 0) {
-        setActivities((prevActivities) => [...prevActivities, ...newActivities]);
-        setLastDoc(newLastDoc);
-      } else {
-        setAllFetched(true);
+        setActivities((prevActivities) => {
+          // Create a set of unique identifiers for existing activities
+          const existingActivityKeys = new Set(
+            prevActivities.map(activity => `${activity.timestamp}-${activity.type}`)
+          );
+  
+          // Filter out activities that already exist in `prevActivities`
+          const uniqueNewActivities = newActivities.filter(activity => {
+            const activityKey = `${activity.timestamp}-${activity.type}`;
+            return !existingActivityKeys.has(activityKey);
+          });
+  
+          return [...prevActivities, ...uniqueNewActivities];
+        });
       }
     }
   }
