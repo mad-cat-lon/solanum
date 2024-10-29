@@ -29,7 +29,18 @@ import {
   PauseIcon,
   ResumeIcon
 } from '@radix-ui/react-icons'
-import { collection, addDoc, query, getDocs, getDoc, setDoc, doc, Timestamp} from 'firebase/firestore';
+import {
+  runTransaction,
+  arrayUnion,
+  collection,
+  addDoc,
+  query,
+  getDocs,
+  getDoc,
+  setDoc,
+  doc,
+  Timestamp
+} from 'firebase/firestore';
 import { useFirestore, useUser } from 'reactfire';
 import { StatsModal } from '@/components/stats-modal';
 import { SettingsModal } from '@/components/settings-modal';
@@ -357,15 +368,29 @@ export default function Component() {
   };
 
   const handleAddNewActivity = async (activityCategory: string) => {
-    // Record default category if none was provided
+    // // Record default category if none was provided
     const newActivity = {
       timestamp: Timestamp.fromDate(new Date()),
       type: activityCategory === '' ? 'Default' : activityCategory,
     };
+  
     if (user) {
-      // Submit the completed activity to Firestore
-      const activityCollectionRef = collection(firestore, `users/${user.uid}/activity`);
-      await addDoc(activityCollectionRef, newActivity);
+      const today = new Date().toISOString().split('T')[0]; // Use date as document ID
+      const activityDocRef = doc(firestore, `users/${user.uid}/log`, today);
+      
+      await runTransaction(firestore, async (transaction) => {
+        const docSnap = await transaction.get(activityDocRef);
+  
+        if (!docSnap.exists()) {
+          // Create a new document for today
+          transaction.set(activityDocRef, { date: today, activities: [newActivity] });
+        } else {
+          // Update existing document by appending to the activities array
+          transaction.update(activityDocRef, {
+            activities: arrayUnion(newActivity)
+          });
+        }
+      });
     }
     setActivities(prevActivities => [...prevActivities, newActivity]);
   
@@ -592,7 +617,7 @@ export default function Component() {
               </div>
             </div>
           </div>
-          <StatsModal isOpen={modals.stats} onClose={() => {toggleModal('stats')}} activities={activities} settings={settings}/>
+          <StatsModal isOpen={modals.stats} onClose={() => {toggleModal('stats')}} settings={settings}/>
           <SettingsModal isOpen={modals.settings} onClose={() => {toggleModal('settings')}} onSave={handleSettingsUpdate} settings={settings}/>
         </CardContent>
       </Card>

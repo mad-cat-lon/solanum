@@ -33,6 +33,7 @@
     "date-fns": "^3.6.0",
     "encoding": "^0.1.13",
     "firebase": "^9.23.0",
+    "firebase-admin": "^12.7.0",
     "lodash.debounce": "^4.0.8",
     "lucide-react": "^0.284.0",
     "next": "latest",

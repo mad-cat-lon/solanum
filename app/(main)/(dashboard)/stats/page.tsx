@@ -1,8 +1,8 @@
 "use client";
 import { ActivityGraph } from "@/components/demo-dashboard/activity-graph"
-import { ActivityChart } from "@/components/demo-dashboard/activity-chart"
+// import { ActivityChart } from "@/components/demo-dashboard/activity-chart"
 import { ActivityProvider } from "@/components/activity-provider";
-import ActivitySummary from "@/components/demo-dashboard/activity-summary";
+// import ActivitySummary from "@/components/demo-dashboard/activity-summary";
 
 export default function ApplicationPage() {
   return (
@@ -16,14 +16,14 @@ export default function ApplicationPage() {
         <div className="flex-1 space-y-4 pt-6">
           <ActivityGraph/>
         </div>
-        <div className="flex flex-row space-x-4 pt-6">
+        {/* <div className="flex flex-row space-x-4 pt-6">
           <div className="flex-1">
             <ActivityChart/>
           </div>
           <div className="w-1/4">
             <ActivitySummary/>
           </div>
-        </div>
+        </div> */}
       </div>
     </ActivityProvider>
   );
