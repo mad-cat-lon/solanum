@@ -1,9 +1,9 @@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { ActivityGraph } from "@/components/demo-dashboard/activity-graph";
-import { ActivityChart } from "@/components/demo-dashboard/activity-chart";
+// import { ActivityChart } from "@/components/demo-dashboard/activity-chart";
 import { ActivityProvider, useActivityData } from '@/components/activity-provider';
-import ActivitySummary from "@/components/demo-dashboard/activity-summary";
+// import ActivitySummary from "@/components/demo-dashboard/activity-summary";
 import { Settings } from "@/types/common";
 
 function StatsModal({ isOpen, onClose, settings }: { isOpen: boolean, onClose: () => void, settings: Settings }) {

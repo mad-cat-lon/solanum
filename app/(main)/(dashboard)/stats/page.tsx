@@ -1,8 +1,8 @@
 "use client";
 import { ActivityGraph } from "@/components/demo-dashboard/activity-graph"
-import { ActivityChart } from "@/components/demo-dashboard/activity-chart"
+// import { ActivityChart } from "@/components/demo-dashboard/activity-chart"
 import { ActivityProvider } from "@/components/activity-provider";
-import ActivitySummary from "@/components/demo-dashboard/activity-summary";
+// import ActivitySummary from "@/components/demo-dashboard/activity-summary";
 
 export default function ApplicationPage() {
   return (
