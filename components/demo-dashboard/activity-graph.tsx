@@ -1,8 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
-import { collection, query, getDocs, Firestore, Timestamp } from 'firebase/firestore';
-import { useFirestore, useUser } from 'reactfire';
+import { useEffect, useState, useMemo, useCallback } from 'react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, AreaChart, Area, BarChart, Bar } from 'recharts';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '@/components/ui/select';
@@ -42,7 +40,7 @@ export const ActivityGraph: React.FC = () => {
     start: undefined,
     end: undefined,
   });
-  const { activities, tasks, settings, loading, categoryColors } = useActivityData();
+  const { activities, settings, loading, categoryColors, fetchMoreActivities } = useActivityData();
   
   useEffect(() => {
     if (!loading && activities.length > 0) {
@@ -57,16 +55,16 @@ export const ActivityGraph: React.FC = () => {
       });
   
       const processActivityData = (activities: Activity[]): ChartData[] => {
-        const activityData: Record<string, Record<string, number | string>> = {}; // Store task counts by date/hour and type
+        const activityData: Record<string, Record<string, number | string>> = {}; 
         const categoriesSet = new Set<string>();
-        let globalMaxValue = 0; // Track global max value
+        let globalMaxValue = 0; 
   
         // Get the min and max dates in the activity list
         let minDate: Date = new Date();
         let maxDate: Date = new Date();
 
-        minDate.setHours(0, 0, 0, 0); // Start of today
-        maxDate.setHours(23, 59, 59, 999); // End of the day
+        minDate.setHours(0, 0, 0, 0);
+        maxDate.setHours(23, 59, 59, 999); 
         
         filteredActivities.forEach(activity => {
           const { timestamp, type } = activity;
@@ -78,40 +76,34 @@ export const ActivityGraph: React.FC = () => {
           categoriesSet.add(type);
         });
 
-        // Ensure minDate and maxDate are not null before proceeding
         if (!minDate || !maxDate) {
           // No valid activities, return early
           return [];
         }
   
-
-        // Ensure maxDate covers the full day by setting it to 23:59:59
         if (maxDate) {
-          maxDate.setHours(23, 59, 59, 999); // End of the day on maxDate
+          maxDate.setHours(23, 59, 59, 999);
         }
 
-        // Ensure minDate is set properly if missing
         if (!minDate) {
           minDate = new Date();
           minDate.setHours(0, 0, 0, 0); // Start of today
         }
 
-        // Generate all dates between minDate and maxDate (group by day or hour)
         const dateRange: string[] = [];
         let currentDate = new Date(minDate); // Ensure currentDate is a Date object
   
         const isToday = selectedRange === 'today';
   
-        // Use a loop to check the date/hour values
         while (currentDate <= maxDate) {
           const formattedDate = isToday
             ? format(currentDate, 'HH') // Group by hour if it's today
             : format(currentDate, 'yyyy-MM-dd'); // Otherwise group by day
           dateRange.push(formattedDate);
           if (isToday) {
-            currentDate.setHours(currentDate.getHours() + 1); // Move to the next hour
+            currentDate.setHours(currentDate.getHours() + 1);
           } else {
-            currentDate.setDate(currentDate.getDate() + 1); // Move to the next date
+            currentDate.setDate(currentDate.getDate() + 1);
           }
         }
 
@@ -119,8 +111,8 @@ export const ActivityGraph: React.FC = () => {
           const { timestamp, type } = activity;
           const date = timestamp.toDate();
           const formattedDate = isToday
-            ? format(date, 'HH') // Format by hour for today's range
-            : format(date, 'yyyy-MM-dd'); // Format by day otherwise
+            ? format(date, 'HH')
+            : format(date, 'yyyy-MM-dd');
   
           if (!activityData[formattedDate]) {
             activityData[formattedDate] = { date: formattedDate };
@@ -134,19 +126,14 @@ export const ActivityGraph: React.FC = () => {
         //  autofill missing tasks with zero
         const completeData: ChartData[] = dateRange.map(date => {
           const dayData: ChartData = { date }; // Initialize each day's or hour's data
-  
-          // For each task type, ensure it exists for the current date/hour, defaulting to zero
-          categoriesSet.forEach(type => {
+            categoriesSet.forEach(type => {
             dayData[type] = (activityData[date]?.[type] || 0) as number; // Use '0' for missing types
           });
   
           return dayData;
         });
   
-        // Set unique task types to state to create lines dynamically
-        setActivityCategories(Array.from(categoriesSet));
-  
-        // Set the max value to state
+        setActivityCategories(Array.from(categoriesSet)); 
         setMaxValue(globalMaxValue);
   
         return completeData;
@@ -156,6 +143,12 @@ export const ActivityGraph: React.FC = () => {
 
     }
   }, [activities, selectedRange, customDateRange, loading, viewType, selectedCategory]);
+
+  useEffect(() => {
+    const { start, end } = getDateRange();
+    fetchMoreActivities(start, end);
+  }, [selectedRange, customDateRange]);
+
 
   useEffect(() => {
     if (chartData.length > 0) {
@@ -220,17 +213,24 @@ export const ActivityGraph: React.FC = () => {
         return { start, end };
       }
       case 'custom':
-        return customDateRange;
+        return {
+          start: customDateRange.start ?? undefined,
+          end: customDateRange.end ?? undefined
+        }
       default:
-        return { start: null, end: null };
+        return { start: undefined, end: undefined };
     }
   };
 
   // Filter chart data based on the selected category
-  const filteredChartData = selectedCategory === 'All' ? chartData : chartData.map(data => ({
-    date: data.date,
-    [selectedCategory]: data[selectedCategory] || 0
-  }));
+  const filteredChartData = useMemo(() => {
+    return selectedCategory === 'All'
+      ? chartData
+      : chartData.map(data => ({
+          date: data.date,
+          [selectedCategory]: data[selectedCategory] || 0,
+        }));
+  }, [chartData, selectedCategory]);
 
   // Function to render the chart based on the selected view type
   const renderChart = () => {
