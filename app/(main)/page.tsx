@@ -410,6 +410,11 @@ export default function Component() {
     inputRef.current?.focus();
   };
 
+  const handleBreakSwitch = () => {
+    setInBreak(prevState => !prevState)
+    setCurrentActivity('')
+  }
+
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center p-4">
@@ -450,7 +455,7 @@ export default function Component() {
           <div className="flex flex-col items-center space-y-8">
             <div className="flex flex-row space-x-7">
               <div>lock in</div>
-              <Switch onClick={() => {setInBreak(prevState => !prevState)}}/>
+              <Switch onClick={() => {handleBreakSwitch()}}/>
               <div>take break</div>
             </div>
             <div className="flex flex-col space-y-6 items-center justify-center">
