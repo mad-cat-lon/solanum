@@ -44,6 +44,8 @@ export const ActivityProvider: React.FC<ActivityProviderProps> = ({ children, ac
   const [settings, setSettings] = useState<Settings>(passedSettings || defaultSettings);
   const [categoryColors, setCategoryColors] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(!passedActivities);
+  const [minStartDate, setMinStartDate] = useState<Date | null>(null);
+  const [maxEndDate, setMaxEndDate] = useState<Date | null>(null)
 
   const fetchSettings = async () => {
     if (!passedSettings) {
@@ -75,10 +77,26 @@ export const ActivityProvider: React.FC<ActivityProviderProps> = ({ children, ac
     const logRef = collection(firestore as Firestore, `users/${user?.uid}/log`);
     
     // Set up the query
+    // let q = query(logRef, orderBy('date', 'desc'));
+    // if (start && end) {
+    //   q = query(logRef, where('date', '>=', start), where('date', '<=', end), orderBy('date', 'desc'));
+    // }
+    // Adjust the query based on the boundaries of minStartDate and maxEndDate
     let q = query(logRef, orderBy('date', 'desc'));
+
     if (start && end) {
+      console.log()
       q = query(logRef, where('date', '>=', start), where('date', '<=', end), orderBy('date', 'desc'));
+    } else if (start && maxEndDate && start > maxEndDate) {
+      // Fetch only data after maxEndDate if the start is beyond maxEndDate
+      console.log('Fetching data past maxEndDate')
+      q = query(logRef, where('date', '>', maxEndDate), where('date', '<=', end || start), orderBy('date', 'desc'));
+    } else if (end && minStartDate && end < minStartDate) {
+      // Fetch only data before minStartDate if the end is before minStartDate
+      console.log('Fetching data before minStartDate')
+      q = query(logRef, where('date', '>=', start || end), where('date', '<', minStartDate), orderBy('date', 'desc'));
     }
+    
   
     const querySnapshot = await getDocs(q);
     const flattenedActivities = querySnapshot.docs.reduce((allActivities: Activity[], doc) => {
@@ -98,7 +116,7 @@ export const ActivityProvider: React.FC<ActivityProviderProps> = ({ children, ac
   };
 
   const fetchInitialActivities = async (start?: Date, end?: Date) => {
-    console.log(`Fetching activities from ${start}-${end}`)
+    console.log(`fetchInitialActivities: Fetching activities from ${start}-${end}`)
     if (user && firestore) {
       setLoading(true);
       const { activities: newActivities,} = await fetchActivities(start, end);
@@ -108,43 +126,95 @@ export const ActivityProvider: React.FC<ActivityProviderProps> = ({ children, ac
     }
   };
 
+
   const fetchMoreActivities = async (start?: Date, end?: Date) => {
-    console.log(`Fetching activities from ${start}-${end}`)
+    console.log(`fetchMoreActivities: Fetching activities from ${start}-${end}`);
     if (user && firestore) {
-      const { activities: newActivities } = await fetchActivities(start, end);
-      console.log(activities)
-      if (newActivities.length > 0) {
-        setActivities((prevActivities) => {
-          // Create a set of unique identifiers for existing activities
-          const existingActivityKeys = new Set(
-            prevActivities.map(activity => `${activity.timestamp}-${activity.type}`)
-          );
+      // Decide whether to fetch based on minStartDate and maxEndDate
+      if (start && maxEndDate && start > maxEndDate) {
+        // Fetch data only after the current maxEndDate
+        const { activities: newActivities } = await fetchActivities(maxEndDate, end);
   
-          // Filter out activities that already exist in `prevActivities`
-          const uniqueNewActivities = newActivities.filter(activity => {
-            const activityKey = `${activity.timestamp}-${activity.type}`;
-            return !existingActivityKeys.has(activityKey);
+        if (newActivities.length > 0) {
+          setActivities((prevActivities) => {
+            const existingActivityKeys = new Set(
+              prevActivities.map((activity) => `${activity.timestamp}-${activity.type}`)
+            );
+            
+            const uniqueNewActivities = newActivities.filter((activity) => {
+              const activityKey = `${activity.timestamp}-${activity.type}`;
+              return !existingActivityKeys.has(activityKey);
+            });
+            
+            return [...prevActivities, ...uniqueNewActivities];
           });
   
-          return [...prevActivities, ...uniqueNewActivities];
-        });
+          setMaxEndDate((prev) => (end && (!prev || end > prev) ? end : prev));
+        }
+      } else if (end && minStartDate && end < minStartDate) {
+        // Fetch data only before the current minStartDate
+        const { activities: newActivities } = await fetchActivities(start, minStartDate);
+  
+        if (newActivities.length > 0) {
+          setActivities((prevActivities) => {
+            const existingActivityKeys = new Set(
+              prevActivities.map((activity) => `${activity.timestamp}-${activity.type}`)
+            );
+            
+            const uniqueNewActivities = newActivities.filter((activity) => {
+              const activityKey = `${activity.timestamp}-${activity.type}`;
+              return !existingActivityKeys.has(activityKey);
+            });
+            
+            return [...uniqueNewActivities, ...prevActivities];
+          });
+  
+          setMinStartDate((prev) => (start && (!prev || start < prev) ? start : prev));
+        }
+      } else {
+        // If date range falls within the already fetched range, skip fetching
+        console.log("Skipping fetch: data within cached range");
       }
     }
   }
+  // const fetchMoreActivities = async (start?: Date, end?: Date) => {
+  //   console.log(`Fetching activities from ${start}-${end}`)
+  //   if (user && firestore) {
+      
+  //     const { activities: newActivities } = await fetchActivities(start, end);
+  //     console.log(activities)
+  //     if (newActivities.length > 0) {
+  //       setActivities((prevActivities) => {
+  //         // Create a set of unique identifiers for existing activities
+  //         const existingActivityKeys = new Set(
+  //           prevActivities.map(activity => `${activity.timestamp}-${activity.type}`)
+  //         );
+  
+  //         // Filter out activities that already exist in `prevActivities`
+  //         const uniqueNewActivities = newActivities.filter(activity => {
+  //           const activityKey = `${activity.timestamp}-${activity.type}`;
+  //           return !existingActivityKeys.has(activityKey);
+  //         });
+  
+  //         return [...prevActivities, ...uniqueNewActivities];
+  //       });
+  //     }
+  //   }
+  // }
 
   useEffect(() => {
-    if (!passedActivities || !passedSettings) {
-      if (!passedActivities) {
-        fetchInitialActivities();
-      }
-      if (!passedSettings) {
-        fetchSettings();
-      }
-    } 
-    else {
-      setLoading(false);
+    if (!passedActivities && activities.length === 0) {
+        let today: Date = new Date();
+        let date7DaysAgo: Date = new Date();
+        date7DaysAgo.setDate(today.getDate() - 7);
+        fetchInitialActivities(date7DaysAgo, today);
     }
-  }, [firestore, user, passedActivities, passedSettings]);
+    if (!passedSettings) {
+        fetchSettings();
+    } else {
+        setLoading(false);
+    }
+}, [firestore, user, passedActivities, passedSettings, activities.length]);
 
   useEffect(() => {
     const setupData = () => {
